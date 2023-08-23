@@ -20,6 +20,9 @@ package build
 
 import (
 	"fmt"
+	"github.com/goodrain/rainbond/db"
+	"github.com/jinzhu/gorm"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"path"
@@ -70,8 +73,33 @@ func (d *netcoreBuild) Build(re *Request) (*Response, error) {
 	if err := d.writeDockerfile(d.sourceDir, re.BuildEnvs); err != nil {
 		return nil, fmt.Errorf("write default dockerfile error:%s", err.Error())
 	}
+	codeInspectSwitch := false
+	codeInspect, err := db.GetManager().TenantServiceCodeInspectionDao().GetTenantServiceCodeInspection(re.ServiceID)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("get tenant service code inspection filure: %v", err)
+	}
+	if codeInspect != nil {
+		codeInspectSwitch = codeInspect.Switch
+	}
 	// build image
-	err := sources.ImageBuild(re.Arch, d.sourceDir, re.CachePVCName, re.CacheMode, re.RbdNamespace, re.ServiceID, re.DeployVersion, re.Logger, "nc-build", "", re.BuildKitImage, re.BuildKitArgs, re.BuildKitCache, re.KubeClient)
+	err = sources.ImageBuild(
+		re.RepositoryURL,
+		re.Arch,
+		d.sourceDir,
+		re.CachePVCName,
+		re.CacheMode,
+		re.RbdNamespace,
+		re.ServiceID,
+		re.DeployVersion,
+		re.Logger,
+		"nc-build",
+		"",
+		re.BuildKitImage,
+		re.BuildKitArgs,
+		re.BuildKitCache,
+		re.KubeClient,
+		codeInspectSwitch,
+	)
 	if err != nil {
 		re.Logger.Error(fmt.Sprintf("build image %s failure, find log in rbd-chaos", d.buildImageName), map[string]string{"step": "builder-exector", "status": "failure"})
 		logrus.Errorf("build image error: %s", err.Error())
