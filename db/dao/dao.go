@@ -31,13 +31,13 @@ var (
 	ErrVolumeNotFound = errors.New("volume not found")
 )
 
-//Dao 数据持久化层接口
+// Dao 数据持久化层接口
 type Dao interface {
 	AddModel(model.Interface) error
 	UpdateModel(model.Interface) error
 }
 
-//DelDao 删除接口
+// DelDao 删除接口
 type DelDao interface {
 	DeleteModel(serviceID string, arg ...interface{}) error
 }
@@ -47,7 +47,7 @@ type EnterpriseDao interface {
 	GetEnterpriseTenants(enterpriseID string) ([]*model.Tenants, error)
 }
 
-//TenantDao tenant dao
+// TenantDao tenant dao
 type TenantDao interface {
 	Dao
 	GetTenantByUUID(uuid string) (*model.Tenants, error)
@@ -61,14 +61,14 @@ type TenantDao interface {
 	DelByTenantID(tenantID string) error
 }
 
-//AppDao tenant dao
+// AppDao tenant dao
 type AppDao interface {
 	Dao
 	GetByEventId(eventID string) (*model.AppStatus, error)
 	DeleteModelByEventId(eventID string) error
 }
 
-//ApplicationDao tenant Application Dao
+// ApplicationDao tenant Application Dao
 type ApplicationDao interface {
 	Dao
 	ListApps(tenantID, appName string, page, pageSize int) ([]*model.Application, int64, error)
@@ -81,7 +81,7 @@ type ApplicationDao interface {
 	DeleteAppByK8sApp(tenantID, k8sAppName string) error
 }
 
-//AppConfigGroupDao Application config group Dao
+// AppConfigGroupDao Application config group Dao
 type AppConfigGroupDao interface {
 	Dao
 	GetConfigGroupByID(appID, configGroupName string) (*model.ApplicationConfigGroup, error)
@@ -93,7 +93,7 @@ type AppConfigGroupDao interface {
 	CreateOrUpdateConfigGroupsInBatch(cgroups []*model.ApplicationConfigGroup) error
 }
 
-//AppConfigGroupServiceDao service config group Dao
+// AppConfigGroupServiceDao service config group Dao
 type AppConfigGroupServiceDao interface {
 	Dao
 	GetConfigGroupServicesByID(appID, configGroupName string) ([]*model.ConfigGroupService, error)
@@ -105,7 +105,7 @@ type AppConfigGroupServiceDao interface {
 	DeleteByAppID(appID string) error
 }
 
-//AppConfigGroupItemDao Application config item group Dao
+// AppConfigGroupItemDao Application config item group Dao
 type AppConfigGroupItemDao interface {
 	Dao
 	GetConfigGroupItemsByID(appID, configGroupName string) ([]*model.ConfigGroupItem, error)
@@ -126,14 +126,14 @@ type VolumeTypeDao interface {
 	CreateOrUpdateVolumeType(vt *model.TenantServiceVolumeType) (*model.TenantServiceVolumeType, error)
 }
 
-//LicenseDao LicenseDao
+// LicenseDao LicenseDao
 type LicenseDao interface {
 	Dao
 	//DeleteLicense(token string) error
 	ListLicenses() ([]*model.LicenseInfo, error)
 }
 
-//TenantServiceDao TenantServiceDao
+// TenantServiceDao TenantServiceDao
 type TenantServiceDao interface {
 	Dao
 	GetServiceByID(serviceID string) (*model.TenantServices, error)
@@ -167,7 +167,7 @@ type TenantServiceDao interface {
 	IsK8sComponentNameDuplicate(appID, serviceID, k8sComponentName string) bool
 }
 
-//TenantServiceDeleteDao TenantServiceDeleteDao
+// TenantServiceDeleteDao TenantServiceDeleteDao
 type TenantServiceDeleteDao interface {
 	Dao
 	GetTenantServicesDeleteByCreateTime(createTime time.Time) ([]*model.TenantServicesDelete, error)
@@ -208,7 +208,7 @@ type TenantServicesPortDao interface {
 	DeleteByComponentIDs(componentIDs []string) error
 }
 
-//TenantPluginDao TenantPluginDao
+// TenantPluginDao TenantPluginDao
 type TenantPluginDao interface {
 	Dao
 	GetPluginByID(pluginID, tenantID string) (*model.TenantPlugin, error)
@@ -219,7 +219,7 @@ type TenantPluginDao interface {
 	CreateOrUpdatePluginsInBatch(plugins []*model.TenantPlugin) error
 }
 
-//TenantPluginDefaultENVDao TenantPluginDefaultENVDao
+// TenantPluginDefaultENVDao TenantPluginDefaultENVDao
 type TenantPluginDefaultENVDao interface {
 	Dao
 	GetDefaultENVByName(pluginID, name, versionID string) (*model.TenantPluginDefaultENV, error)
@@ -232,7 +232,7 @@ type TenantPluginDefaultENVDao interface {
 	GetDefaultEnvWhichCanBeSetByPluginID(pluginID, versionID string) ([]*model.TenantPluginDefaultENV, error)
 }
 
-//TenantPluginBuildVersionDao TenantPluginBuildVersionDao
+// TenantPluginBuildVersionDao TenantPluginBuildVersionDao
 type TenantPluginBuildVersionDao interface {
 	Dao
 	DeleteBuildVersionByVersionID(versionID string) error
@@ -245,7 +245,7 @@ type TenantPluginBuildVersionDao interface {
 	CreateOrUpdatePluginBuildVersionsInBatch(buildVersions []*model.TenantPluginBuildVersion) error
 }
 
-//TenantPluginVersionEnvDao TenantPluginVersionEnvDao
+// TenantPluginVersionEnvDao TenantPluginVersionEnvDao
 type TenantPluginVersionEnvDao interface {
 	Dao
 	DeleteEnvByEnvName(envName, pluginID, serviceID string) error
@@ -258,7 +258,7 @@ type TenantPluginVersionEnvDao interface {
 	CreateOrUpdatePluginVersionEnvsInBatch(versionEnvs []*model.TenantPluginVersionEnv) error
 }
 
-//TenantPluginVersionConfigDao service plugin config that can be dynamic discovery dao interface
+// TenantPluginVersionConfigDao service plugin config that can be dynamic discovery dao interface
 type TenantPluginVersionConfigDao interface {
 	Dao
 	GetPluginConfig(serviceID, pluginID string) (*model.TenantPluginVersionDiscoverConfig, error)
@@ -269,7 +269,7 @@ type TenantPluginVersionConfigDao interface {
 	CreateOrUpdatePluginVersionConfigsInBatch(versionConfigs []*model.TenantPluginVersionDiscoverConfig) error
 }
 
-//TenantServicePluginRelationDao TenantServicePluginRelationDao
+// TenantServicePluginRelationDao TenantServicePluginRelationDao
 type TenantServicePluginRelationDao interface {
 	Dao
 	DeleteRelationByServiceIDAndPluginID(serviceID, pluginID string) error
@@ -283,7 +283,7 @@ type TenantServicePluginRelationDao interface {
 	CreateOrUpdatePluginRelsInBatch(relations []*model.TenantServicePluginRelation) error
 }
 
-//TenantServiceRelationDao TenantServiceRelationDao
+// TenantServiceRelationDao TenantServiceRelationDao
 type TenantServiceRelationDao interface {
 	Dao
 	DelDao
@@ -297,7 +297,7 @@ type TenantServiceRelationDao interface {
 	CreateOrUpdateRelationsInBatch(relations []*model.TenantServiceRelation) error
 }
 
-//TenantServicesStreamPluginPortDao TenantServicesStreamPluginPortDao
+// TenantServicesStreamPluginPortDao TenantServicesStreamPluginPortDao
 type TenantServicesStreamPluginPortDao interface {
 	Dao
 	GetPluginMappingPorts(serviceID string) ([]*model.TenantServicesStreamPluginPort, error)
@@ -323,7 +323,7 @@ type TenantServicesStreamPluginPortDao interface {
 	CreateOrUpdateStreamPluginPortsInBatch(spPorts []*model.TenantServicesStreamPluginPort) error
 }
 
-//TenantServiceEnvVarDao TenantServiceEnvVarDao
+// TenantServiceEnvVarDao TenantServiceEnvVarDao
 type TenantServiceEnvVarDao interface {
 	Dao
 	DelDao
@@ -337,7 +337,7 @@ type TenantServiceEnvVarDao interface {
 	DeleteByComponentIDs(componentIDs []string) error
 }
 
-//TenantServiceMountRelationDao TenantServiceMountRelationDao
+// TenantServiceMountRelationDao TenantServiceMountRelationDao
 type TenantServiceMountRelationDao interface {
 	Dao
 	GetTenantServiceMountRelationsByService(serviceID string) ([]*model.TenantServiceMountRelation, error)
@@ -348,7 +348,7 @@ type TenantServiceMountRelationDao interface {
 	CreateOrUpdateVolumeRelsInBatch(volRels []*model.TenantServiceMountRelation) error
 }
 
-//TenantServiceVolumeDao TenantServiceVolumeDao
+// TenantServiceVolumeDao TenantServiceVolumeDao
 type TenantServiceVolumeDao interface {
 	Dao
 	DelDao
@@ -365,7 +365,7 @@ type TenantServiceVolumeDao interface {
 	CreateOrUpdateVolumesInBatch(volumes []*model.TenantServiceVolume) error
 }
 
-//TenantServiceConfigFileDao tenant service config file dao interface
+// TenantServiceConfigFileDao tenant service config file dao interface
 type TenantServiceConfigFileDao interface {
 	Dao
 	GetConfigFileByServiceID(serviceID string) ([]*model.TenantServiceConfigFile, error)
@@ -376,7 +376,7 @@ type TenantServiceConfigFileDao interface {
 	CreateOrUpdateConfigFilesInBatch(configFiles []*model.TenantServiceConfigFile) error
 }
 
-//TenantServiceLBMappingPortDao vs lb mapping port dao
+// TenantServiceLBMappingPortDao vs lb mapping port dao
 type TenantServiceLBMappingPortDao interface {
 	Dao
 	GetTenantServiceLBMappingPort(serviceID string, containerPort int) (*model.TenantServiceLBMappingPort, error)
@@ -390,7 +390,7 @@ type TenantServiceLBMappingPortDao interface {
 	PortExists(port int) bool
 }
 
-//TenantServiceLabelDao TenantServiceLabelDao
+// TenantServiceLabelDao TenantServiceLabelDao
 type TenantServiceLabelDao interface {
 	Dao
 	DelDao
@@ -409,13 +409,13 @@ type TenantServiceLabelDao interface {
 	CreateOrUpdateLabelsInBatch(labels []*model.TenantServiceLable) error
 }
 
-//LocalSchedulerDao 本地调度信息
+// LocalSchedulerDao 本地调度信息
 type LocalSchedulerDao interface {
 	Dao
 	GetLocalScheduler(serviceID string) ([]*model.LocalScheduler, error)
 }
 
-//ServiceProbeDao ServiceProbeDao
+// ServiceProbeDao ServiceProbeDao
 type ServiceProbeDao interface {
 	Dao
 	DelDao
@@ -427,14 +427,14 @@ type ServiceProbeDao interface {
 	CreateOrUpdateProbesInBatch(probes []*model.TenantServiceProbe) error
 }
 
-//CodeCheckResultDao CodeCheckResultDao
+// CodeCheckResultDao CodeCheckResultDao
 type CodeCheckResultDao interface {
 	Dao
 	GetCodeCheckResult(serviceID string) (*model.CodeCheckResult, error)
 	DeleteByServiceID(serviceID string) error
 }
 
-//EventDao EventDao
+// EventDao EventDao
 type EventDao interface {
 	Dao
 	CreateEventsInBatch(events []*model.ServiceEvent) error
@@ -461,7 +461,7 @@ type EventDao interface {
 	CountEvents(tenantID, serviceID string, eventType string) int64
 }
 
-//VersionInfoDao VersionInfoDao
+// VersionInfoDao VersionInfoDao
 type VersionInfoDao interface {
 	Dao
 	ListSuccessfulOnes() ([]*model.VersionInfo, error)
@@ -472,15 +472,15 @@ type VersionInfoDao interface {
 	GetAllVersionByServiceID(serviceID string) ([]*model.VersionInfo, error)
 	DeleteVersionByEventID(eventID string) error
 	DeleteVersionByServiceID(serviceID string) error
-	GetVersionInfo(timePoint time.Time, serviceIDList []string) ([]*model.VersionInfo, error)
 	DeleteVersionInfo(obj *model.VersionInfo) error
 	DeleteFailureVersionInfo(timePoint time.Time, status string, serviceIDList []string) error
-	SearchVersionInfo() ([]*model.VersionInfo, error)
+	GetServicesAndCount(finalStatus string, count uint) ([]*model.VersionInfoCount, error)
+	SearchExpireVersionInfo(serviceID string, count uint) ([]*model.VersionInfo, error)
 	ListByServiceIDStatus(serviceID string, finalStatus *bool) ([]*model.VersionInfo, error)
 	ListVersionsByComponentIDs(componentIDs []string) ([]*model.VersionInfo, error)
 }
 
-//RegionUserInfoDao UserRegionInfoDao
+// RegionUserInfoDao UserRegionInfoDao
 type RegionUserInfoDao interface {
 	Dao
 	GetALLTokenInValidityPeriod() ([]*model.RegionUserInfo, error)
@@ -488,14 +488,14 @@ type RegionUserInfoDao interface {
 	GetTokenByTokenID(token string) (*model.RegionUserInfo, error)
 }
 
-//RegionAPIClassDao RegionAPIClassDao
+// RegionAPIClassDao RegionAPIClassDao
 type RegionAPIClassDao interface {
 	Dao
 	GetPrefixesByClass(apiClass string) ([]*model.RegionAPIClass, error)
 	DeletePrefixInClass(apiClass, prefix string) error
 }
 
-//NotificationEventDao NotificationEventDao
+// NotificationEventDao NotificationEventDao
 type NotificationEventDao interface {
 	Dao
 	GetNotificationEventByHash(hash string) (*model.NotificationEvent, error)
@@ -504,7 +504,7 @@ type NotificationEventDao interface {
 	GetNotificationEventNotHandle() ([]*model.NotificationEvent, error)
 }
 
-//AppBackupDao group app backup history
+// AppBackupDao group app backup history
 type AppBackupDao interface {
 	Dao
 	CheckHistory(groupID, version string) bool
@@ -515,7 +515,7 @@ type AppBackupDao interface {
 	GetDeleteAppBackups() ([]*model.AppBackup, error)
 }
 
-//ServiceSourceDao service source dao
+// ServiceSourceDao service source dao
 type ServiceSourceDao interface {
 	Dao
 	GetServiceSource(serviceID string) ([]*model.ServiceSourceConfig, error)

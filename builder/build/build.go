@@ -40,7 +40,7 @@ func init() {
 	buildcreaters = make(map[code.Lang]CreaterBuild)
 	buildcreaters[code.Dockerfile] = dockerfileBuilder
 	buildcreaters[code.Docker] = dockerfileBuilder
-	buildcreaters[code.NetCore] = netcoreBuilder
+	buildcreaters[code.NetCore] = customDockerBuilder
 	buildcreaters[code.JavaJar] = slugBuilder
 	buildcreaters[code.JavaMaven] = slugBuilder
 	buildcreaters[code.JaveWar] = slugBuilder
@@ -49,6 +49,7 @@ func init() {
 	buildcreaters[code.Nodejs] = slugBuilder
 	buildcreaters[code.Golang] = slugBuilder
 	buildcreaters[code.OSS] = slugBuilder
+	buildcreaters[code.NodeJSDockerfile] = customDockerBuilder
 }
 
 var buildcreaters map[code.Lang]CreaterBuild
@@ -81,36 +82,37 @@ type Response struct {
 
 //Request build input
 type Request struct {
-	BuildKitImage string
-	BuildKitArgs  []string
-	BuildKitCache bool
-	RbdNamespace  string
-	GRDataPVCName string
-	CachePVCName  string
-	CacheMode     string
-	CachePath     string
-	TenantID      string
-	SourceDir     string
-	CacheDir      string
-	TGZDir        string
-	RepositoryURL string
-	CodeSouceInfo sources.CodeSourceInfo
-	Branch        string
-	ServiceAlias  string
-	ServiceID     string
-	DeployVersion string
-	Runtime       string
-	ServerType    string
-	Commit        Commit
-	Lang          code.Lang
-	BuildEnvs     map[string]string
-	Logger        event.Logger
-	ImageClient   sources.ImageClient
-	KubeClient    kubernetes.Interface
-	ExtraHosts    []string
-	HostAlias     []HostAlias
-	Ctx           context.Context
-	Arch          string
+	BuildKitImage    string
+	BuildKitArgs     []string
+	BuildKitCache    bool
+	BuildSharedCache bool
+	RbdNamespace     string
+	GRDataPVCName    string
+	CachePVCName     string
+	CacheMode        string
+	CachePath        string
+	TenantID         string
+	SourceDir        string
+	CacheDir         string
+	TGZDir           string
+	RepositoryURL    string
+	CodeSouceInfo    sources.CodeSourceInfo
+	Branch           string
+	ServiceAlias     string
+	ServiceID        string
+	DeployVersion    string
+	Runtime          string
+	ServerType       string
+	Commit           Commit
+	Lang             code.Lang
+	BuildEnvs        map[string]string
+	Logger           event.Logger
+	ImageClient      sources.ImageClient
+	KubeClient       kubernetes.Interface
+	ExtraHosts       []string
+	HostAlias        []HostAlias
+	Ctx              context.Context
+	Arch             string
 }
 
 // HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
