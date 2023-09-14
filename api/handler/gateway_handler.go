@@ -40,6 +40,11 @@ type GatewayHandler interface {
 	UpdateGatewayCertificate(req *apimodel.GatewayCertificate) error
 	DeleteGatewayCertificate(name, namespace string) error
 
+	AddOuterPortGatewayHTTPRoute(ruleStruct *apimodel.OuterPortGatewayHTTPRouteStruct) (*dbmodel.K8sResource, error)
+	GetOuterPortGatewayHTTPRoute(name, namespace string) (*apimodel.GatewayHTTPRouteConcise, error)
+	DeleteOuterPortGatewayHTTPRoute(name, namespace, appID string) (*apimodel.GatewayHTTPRouteConcise, error)
+	CreateOuterPortGatewayHTTPRoute(req *apimodel.OldOuterPortGatewayHTTPRouteStruct) (*dbmodel.K8sResource, error)
+
 	AddGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStruct) (*dbmodel.K8sResource, error)
 	GetGatewayHTTPRoute(name, namespace string) (*apimodel.GatewayHTTPRouteStruct, error)
 	UpdateGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStruct) (*dbmodel.K8sResource, error)

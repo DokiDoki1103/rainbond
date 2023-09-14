@@ -86,6 +86,19 @@ func (g *GatewayStruct) BatchGatewayHTTPRoute(w http.ResponseWriter, r *http.Req
 	}
 }
 
+func (g *GatewayStruct) OuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		g.getOuterPortGatewayHTTPRoute(w, r)
+	case "POST":
+		g.addOuterPortGatewayHTTPRoute(w, r)
+	case "PUT":
+		g.createOuterPortGatewayHTTPRoute(w, r)
+	case "DELETE":
+		g.deleteOuterPortGatewayHTTPRoute(w, r)
+	}
+}
+
 //GatewayHTTPRoute k8s gateway http route related operations
 func (g *GatewayStruct) GatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -111,6 +124,57 @@ func validateDomain(domain string) []string {
 		errs = k8svalidation.IsDNS1123Subdomain(domain)
 	}
 	return errs
+}
+
+func (g *GatewayStruct) getOuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("name")
+	namespace := r.FormValue("namespace")
+	res, err := handler.GetGatewayHandler().GetOuterPortGatewayHTTPRoute(name, namespace)
+	if err != nil {
+		httputil.ReturnError(r, w, 500, fmt.Sprintf("Unexpected error occorred while adding gateway http rule: %v", err))
+		return
+	}
+	httputil.ReturnSuccess(r, w, res)
+}
+
+func (g *GatewayStruct) addOuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
+	var req api_model.OuterPortGatewayHTTPRouteStruct
+	ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &req, nil)
+	if !ok {
+		return
+	}
+	res, err := handler.GetGatewayHandler().AddOuterPortGatewayHTTPRoute(&req)
+	if err != nil {
+		httputil.ReturnError(r, w, 500, fmt.Sprintf("Unexpected error occorred while adding gateway http rule: %v", err))
+		return
+	}
+	httputil.ReturnSuccess(r, w, res)
+}
+
+func (g *GatewayStruct) createOuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
+	var req api_model.OldOuterPortGatewayHTTPRouteStruct
+	ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &req, nil)
+	if !ok {
+		return
+	}
+	k8sResource, err := handler.GetGatewayHandler().CreateOuterPortGatewayHTTPRoute(&req)
+	if err != nil {
+		httputil.ReturnError(r, w, 500, fmt.Sprintf("Unexpected error occorred while adding gateway http rule: %v", err))
+		return
+	}
+	httputil.ReturnSuccess(r, w, k8sResource)
+}
+
+func (g *GatewayStruct) deleteOuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("name")
+	namespace := r.FormValue("namespace")
+	appID := r.FormValue("app_id")
+	res, err := handler.GetGatewayHandler().DeleteOuterPortGatewayHTTPRoute(name, namespace, appID)
+	if err != nil {
+		httputil.ReturnError(r, w, 500, fmt.Sprintf("Unexpected error occorred while adding gateway http rule: %v", err))
+		return
+	}
+	httputil.ReturnSuccess(r, w, res)
 }
 
 func (g *GatewayStruct) addGatewayCertificate(w http.ResponseWriter, r *http.Request) {

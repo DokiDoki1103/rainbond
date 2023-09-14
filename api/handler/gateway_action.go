@@ -21,18 +21,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
-	k8serror "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"os"
-	"sigs.k8s.io/gateway-api/apis/v1beta1"
-	gateway "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/typed/apis/v1beta1"
-	"sort"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/coreos/etcd/clientv3"
 	apimodel "github.com/goodrain/rainbond/api/model"
 	"github.com/goodrain/rainbond/api/util/bcode"
@@ -43,6 +31,18 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
+	k8serror "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"os"
+	"sigs.k8s.io/gateway-api/apis/v1beta1"
+	gateway "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/typed/apis/v1beta1"
+	"sigs.k8s.io/yaml"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // GatewayAction -
@@ -191,16 +191,16 @@ func (g *GatewayAction) UpdateGatewayCertificate(req *apimodel.GatewayCertificat
 //DeleteGatewayCertificate delete gateway certificate
 func (g *GatewayAction) DeleteGatewayCertificate(name, namespace string) error {
 	err := g.kubeClient.CoreV1().Secrets(namespace).Delete(context.Background(), name, metav1.DeleteOptions{})
-	if err != nil {
+	if err != nil && !k8serror.IsNotFound(err) {
 		logrus.Errorf("delete gateway certificate secret failure: %v", err)
 		return err
 	}
 	return nil
 }
 
-func handleGatewayRules(req *apimodel.GatewayHTTPRouteStruct) []v1beta1.HTTPRouteRule {
+func handleGatewayRules(rRules []*apimodel.Rules) []v1beta1.HTTPRouteRule {
 	var rules []v1beta1.HTTPRouteRule
-	for _, rule := range req.Rules {
+	for _, rule := range rRules {
 		var (
 			backendRefs []v1beta1.HTTPBackendRef
 			matches     []v1beta1.HTTPRouteMatch
@@ -320,6 +320,132 @@ func handleGatewayRules(req *apimodel.GatewayHTTPRouteStruct) []v1beta1.HTTPRout
 	return rules
 }
 
+func (g *GatewayAction) DeleteOuterPortGatewayHTTPRoute(name, namespace, appID string) (*apimodel.GatewayHTTPRouteConcise, error) {
+	opHTTPRoute, err := g.GetOuterPortGatewayHTTPRoute(name, namespace)
+	if err != nil {
+		return nil, err
+	}
+	err = g.DeleteGatewayHTTPRoute(name, namespace, appID)
+	if err != nil {
+		return nil, err
+	}
+	return opHTTPRoute, nil
+}
+
+//GetOuterPortGatewayHTTPRoute get outer port gateway http route
+func (g *GatewayAction) GetOuterPortGatewayHTTPRoute(name, namespace string) (*apimodel.GatewayHTTPRouteConcise, error) {
+	httproute, err := g.gatewayClient.HTTPRoutes(namespace).Get(context.Background(), name, metav1.GetOptions{})
+	if err != nil && !k8serror.IsNotFound(err) {
+		logrus.Errorf("get outer port gateway http route failure: %v", err)
+		return nil, err
+	}
+	hosts := make([]string, 0)
+	routeYaml := ""
+	protocol := "http"
+	if httproute != nil && !k8serror.IsNotFound(err) {
+		for _, hostname := range httproute.Spec.Hostnames {
+			hosts = append(hosts, string(hostname))
+		}
+		routeYaml, err = ObjectToJSONORYaml("yaml", httproute)
+		if err != nil {
+			return nil, err
+		}
+		protocol = "https"
+		sectionName := httproute.Spec.ParentRefs[0].SectionName
+		if *sectionName != "https" {
+			protocol = "http"
+		}
+	}
+	concise := apimodel.GatewayHTTPRouteConcise{
+		Name:      name,
+		Hosts:     hosts,
+		Protocol:  protocol,
+		RouteYaml: routeYaml,
+	}
+	return &concise, nil
+}
+
+func (g *GatewayAction) CreateOuterPortGatewayHTTPRoute(req *apimodel.OldOuterPortGatewayHTTPRouteStruct) (*model.K8sResource, error) {
+	var route v1beta1.HTTPRoute
+	err := yaml.Unmarshal([]byte(req.RouteYaml), &route)
+	if err != nil {
+		return nil, err
+	}
+	route.ResourceVersion = ""
+	route.UID = ""
+	if req.Name != route.Name {
+		rules := route.Spec.Rules
+		var newRules []v1beta1.HTTPRouteRule
+		for _, rule := range rules {
+			backendRefs := rule.BackendRefs
+			var newBackendRefs []v1beta1.HTTPBackendRef
+			for _, backendRef := range backendRefs {
+				if string(*backendRef.Kind) == "Service" && strings.HasPrefix(route.Name, string(backendRef.Name)) {
+					backendRef.Name = v1beta1.ObjectName(req.ServiceName)
+				}
+				newBackendRefs = append(newBackendRefs, backendRef)
+			}
+			rule.BackendRefs = newBackendRefs
+			newRules = append(newRules, rule)
+		}
+		route.Spec.Rules = newRules
+		route.Name = req.Name
+	}
+	newRoute, err := g.gatewayClient.HTTPRoutes(req.Namespace).Create(context.Background(), &route, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	newRoute.Kind = apimodel.HTTPRoute
+	newRoute.APIVersion = apimodel.APIVersionHTTPRoute
+	httpRouteYaml, err := ObjectToJSONORYaml("yaml", &newRoute)
+	if err != nil {
+		logrus.Errorf("create gateway http route object to yaml failure: %v", err)
+		return nil, err
+	}
+	k8sresource := []*model.K8sResource{{
+		AppID:         req.AppID,
+		Name:          req.Name,
+		Kind:          apimodel.HTTPRoute,
+		Content:       httpRouteYaml,
+		ErrorOverview: "创建成功",
+		State:         apimodel.CreateSuccess,
+	}}
+	err = db.GetManager().K8sResourceDao().CreateK8sResource(k8sresource)
+	if err != nil {
+		logrus.Errorf("database operation gateway http route create k8s resource failure: %v", err)
+		return nil, err
+	}
+	return k8sresource[0], nil
+}
+
+func (g *GatewayAction) AddOuterPortGatewayHTTPRoute(outerPortRoute *apimodel.OuterPortGatewayHTTPRouteStruct) (*model.K8sResource, error) {
+	hosts := []string{outerPortRoute.Host}
+	labels := make(map[string]string)
+	labels["app_id"] = outerPortRoute.AppID
+	rRules := []*apimodel.Rules{{
+		BackendRefsRules: []*apimodel.BackendRefsRule{{
+			outerPortRoute.ServiceName,
+			100,
+			"Service",
+			outerPortRoute.Namespace,
+			outerPortRoute.Port,
+		}},
+	}}
+	req := &apimodel.GatewayHTTPRouteStruct{
+		Name:             outerPortRoute.Name,
+		AppID:            outerPortRoute.AppID,
+		SectionName:      "http",
+		Namespace:        outerPortRoute.Namespace,
+		GatewayKind:      "Gateway",
+		GatewayName:      outerPortRoute.GatewayName,
+		GatewayNamespace: outerPortRoute.GatewayNamespace,
+		Hosts:            hosts,
+		Rules:            rRules,
+	}
+	return g.AddGatewayHTTPRoute(req)
+}
+
 //AddGatewayHTTPRoute create gateway http route
 func (g *GatewayAction) AddGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStruct) (*model.K8sResource, error) {
 	gatewayNamespace := v1beta1.Namespace(req.GatewayNamespace)
@@ -328,7 +454,7 @@ func (g *GatewayAction) AddGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStruct
 	for _, host := range req.Hosts {
 		hosts = append(hosts, v1beta1.Hostname(host))
 	}
-	rules := handleGatewayRules(req)
+	rules := handleGatewayRules(req.Rules)
 	labels := make(map[string]string)
 	labels["app_id"] = req.AppID
 	var sectionName *v1beta1.SectionName
@@ -565,7 +691,7 @@ func (g *GatewayAction) GetGatewayHTTPRoute(name, namespace string) (*apimodel.G
 
 //UpdateGatewayHTTPRoute update gateway http route
 func (g *GatewayAction) UpdateGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStruct) (*model.K8sResource, error) {
-	rules := handleGatewayRules(req)
+	rules := handleGatewayRules(req.Rules)
 	gatewayKind := v1beta1.Kind(req.GatewayKind)
 	gatewayNamespace := v1beta1.Namespace(req.GatewayNamespace)
 	var hosts []v1beta1.Hostname
@@ -628,7 +754,7 @@ func (g *GatewayAction) UpdateGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStr
 //DeleteGatewayHTTPRoute delete gateway http route
 func (g *GatewayAction) DeleteGatewayHTTPRoute(name, namespace, appID string) error {
 	err := g.gatewayClient.HTTPRoutes(namespace).Delete(context.Background(), name, metav1.DeleteOptions{})
-	if err != nil {
+	if err != nil && !k8serror.IsNotFound(err) {
 		logrus.Errorf("delete gateway http route failure: %v", err)
 		return err
 	}
@@ -656,7 +782,6 @@ func (g *GatewayAction) AddHTTPRule(req *apimodel.AddHTTPRuleStruct) error {
 		if err != nil {
 			return fmt.Errorf("send http rule task: %v", err)
 		}
-
 		return nil
 	})
 }

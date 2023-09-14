@@ -19,10 +19,9 @@
 package model
 
 import (
+	dbmodel "github.com/goodrain/rainbond/db/model"
 	"strconv"
 	"strings"
-
-	dbmodel "github.com/goodrain/rainbond/db/model"
 )
 
 //AddHTTPRuleStruct is used to add http rule, certificate and rule extensions
@@ -50,6 +49,7 @@ type AddHTTPRuleStruct struct {
 	IsLimiting         bool                   `json:"is_limiting"`
 	BurstTrafficNumber int                    `json:"burst_traffic_number"`
 	LimitingPolicyName string                 `json:"limiting_policy_name"`
+	GatewayType        string                 `json:"gateway_type"`
 }
 
 type LimitingPolicy struct {
@@ -75,6 +75,31 @@ type GatewayHTTPRouteConcise struct {
 	GatewayKind      string   `json:"gateway_kind"`
 	CreateTime       string   `json:"create_time"`
 	GatewayNamespace string   `json:"gateway_namespace"`
+	Protocol         string   `json:"protocol"`
+	RouteYaml        string   `json:"route_yaml"`
+}
+
+//OuterPortGatewayHTTPRouteStruct -
+type OuterPortGatewayHTTPRouteStruct struct {
+	Name             string `json:"name"`
+	AppID            string `json:"app_id"`
+	ServiceID        string `json:"service_id"`
+	Namespace        string `json:"namespace"`
+	GatewayName      string `json:"gateway_name"`
+	GatewayNamespace string `json:"gateway_namespace"`
+	Host             string `json:"host"`
+	Port             int    `json:"port"`
+	ServiceName      string `json:"service_name"`
+}
+
+type OldOuterPortGatewayHTTPRouteStruct struct {
+	Name        string `json:"name"`
+	AppID       string `json:"app_id"`
+	ServiceID   string `json:"service_id"`
+	Namespace   string `json:"namespace"`
+	RouteYaml   string `json:"route_yaml"`
+	ServiceName string `json:"service_name"`
+	Port        int    `json:"port"`
 }
 
 //GatewayHTTPRouteStruct -

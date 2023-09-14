@@ -251,6 +251,7 @@ type Gatewayer interface {
 	GetAvailablePort(w http.ResponseWriter, r *http.Request)
 	RuleConfig(w http.ResponseWriter, r *http.Request)
 	Certificate(w http.ResponseWriter, r *http.Request)
+	OuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request)
 	GatewayHTTPRoute(w http.ResponseWriter, r *http.Request)
 	BatchGatewayHTTPRoute(w http.ResponseWriter, r *http.Request)
 	GatewayCertificate(w http.ResponseWriter, r *http.Request)

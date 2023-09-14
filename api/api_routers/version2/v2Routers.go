@@ -232,6 +232,11 @@ func (v2 *V2) tenantNameRouter() chi.Router {
 	r.Put("/gateway-http-route", controller.GetManager().GatewayHTTPRoute)
 	r.Delete("/gateway-http-route", controller.GetManager().GatewayHTTPRoute)
 
+	r.Get("/outer-port-gateway", controller.GetManager().OuterPortGatewayHTTPRoute)
+	r.Post("/outer-port-gateway", controller.GetManager().OuterPortGatewayHTTPRoute)
+	r.Delete("/outer-port-gateway", controller.GetManager().OuterPortGatewayHTTPRoute)
+	r.Put("/outer-port-gateway", controller.GetManager().OuterPortGatewayHTTPRoute)
+
 	r.Get("/batch-gateway-http-route", controller.GetManager().BatchGatewayHTTPRoute)
 
 	r.Post("/gateway-certificate", controller.GetManager().GatewayCertificate)
