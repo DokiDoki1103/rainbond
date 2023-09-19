@@ -187,7 +187,7 @@ type TenantServiceSecurityContextDao interface {
 	DeleteTenantServiceSecurityContext(serviceID string) error
 }
 
-//TenantServicesPortDao TenantServicesPortDao
+// TenantServicesPortDao TenantServicesPortDao
 type TenantServicesPortDao interface {
 	Dao
 	DelDao
@@ -537,7 +537,7 @@ type RuleExtensionDao interface {
 	CreateOrUpdateRuleExtensionsInBatch(exts []*model.RuleExtension) error
 }
 
-//LimitingPolicyDao -
+// LimitingPolicyDao -
 type LimitingPolicyDao interface {
 	Dao
 	GetLimitingPolicyByLimitingName(limitingName string) (*model.LimitingPolicy, error)
@@ -672,6 +672,7 @@ type K8sResourceDao interface {
 	DeleteK8sResourceByIDs(ids []uint) error
 	CreateK8sResource(k8sResources []*model.K8sResource) error
 	DeleteK8sResource(appID, name string, kind string) error
+	DeleteK8sResourceByKind(appID, kind string) error
 	GetK8sResourceByName(appID, name, kind string) (model.K8sResource, error)
 }
 

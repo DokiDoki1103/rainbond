@@ -59,7 +59,7 @@ func (t *K8sResourceDaoImpl) ListByAppID(appID string) ([]model.K8sResource, err
 	return resources, nil
 }
 
-//DeleteK8sResourceByIDs -
+// DeleteK8sResourceByIDs -
 func (t *K8sResourceDaoImpl) DeleteK8sResourceByIDs(ids []uint) error {
 	if err := t.DB.Where("ID in (?)", ids).Delete(&model.K8sResource{}).Error; err != nil {
 		return err
@@ -92,6 +92,10 @@ func (t *K8sResourceDaoImpl) CreateK8sResource(k8sResources []*model.K8sResource
 // DeleteK8sResource -
 func (t *K8sResourceDaoImpl) DeleteK8sResource(appID, name string, kind string) error {
 	return t.DB.Where("app_id=? and name=? and kind=?", appID, name, kind).Delete(&model.K8sResource{}).Error
+}
+
+func (t *K8sResourceDaoImpl) DeleteK8sResourceByKind(appID, kind string) error {
+	return t.DB.Where("app_id=? and kind=?", appID, kind).Delete(&model.K8sResource{}).Error
 }
 
 // GetK8sResourceByName -

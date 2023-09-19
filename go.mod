@@ -1,6 +1,6 @@
 module github.com/goodrain/rainbond
 
-go 1.18
+go 1.19
 
 require (
 	cuelang.org/go v0.2.2
@@ -39,7 +39,7 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/glog v1.0.0
 	github.com/golang/mock v1.6.0
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.3
 	github.com/goodrain/rainbond-oam v0.0.0-20221115150510-dd668a6d6765
 	github.com/goodrain/rainbond-operator v1.3.1-0.20210401055914-f8fe4bf89a21
 	github.com/gorilla/websocket v1.4.2
@@ -84,19 +84,19 @@ require (
 	github.com/twinj/uuid v1.0.0
 	github.com/urfave/cli v1.22.4
 	github.com/yudai/umutex v0.0.0-20150817080136-18216d265c6b
-	golang.org/x/crypto v0.1.0
-	golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10
-	golang.org/x/sys v0.3.0
-	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65
-	google.golang.org/grpc v1.45.0
-	google.golang.org/protobuf v1.28.1
+	golang.org/x/crypto v0.11.0
+	golang.org/x/net v0.13.0
+	golang.org/x/sys v0.10.0
+	golang.org/x/time v0.3.0
+	google.golang.org/grpc v1.57.0
+	google.golang.org/protobuf v1.31.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.8.2
-	k8s.io/api v0.26.0
+	k8s.io/api v0.28.0
 	k8s.io/apiextensions-apiserver v0.26.0
-	k8s.io/apimachinery v0.26.0
+	k8s.io/apimachinery v0.28.0
 	k8s.io/apiserver v0.24.1
 	k8s.io/cli-runtime v0.24.1
 	k8s.io/client-go v12.0.0+incompatible
@@ -113,8 +113,10 @@ require (
 	github.com/go-playground/assert/v2 v2.0.1
 	github.com/helm/helm v2.17.0+incompatible
 	github.com/openkruise/kruise-api v1.4.0
-	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
-	k8s.io/klog/v2 v2.80.1
+	golang.org/x/sync v0.1.0
+	istio.io/api v1.19.0-alpha.1.0.20230911213929-405bf0a1a262
+	istio.io/client-go v1.19.0-alpha.1.0.20230911214830-2ca8f9cb44fb
+	k8s.io/klog/v2 v2.100.1
 	k8s.io/metrics v0.24.1
 	sigs.k8s.io/gateway-api v0.6.2
 )
@@ -162,7 +164,7 @@ require (
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.2 // indirect
-	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
+	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
@@ -170,9 +172,9 @@ require (
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
 	github.com/go-logr/zapr v1.2.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
-	github.com/go-openapi/jsonpointer v0.19.5 // indirect
-	github.com/go-openapi/jsonreference v0.20.0 // indirect
-	github.com/go-openapi/swag v0.19.14 // indirect
+	github.com/go-openapi/jsonpointer v0.19.6 // indirect
+	github.com/go-openapi/jsonreference v0.20.2 // indirect
+	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
@@ -201,7 +203,7 @@ require (
 	github.com/lib/pq v1.10.4 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/lufia/iostat v1.1.0 // indirect
-	github.com/mailru/easyjson v0.7.6 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-xmlrpc v0.0.3 // indirect
@@ -251,11 +253,13 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.19.1 // indirect
-	golang.org/x/mod v0.6.0 // indirect
-	golang.org/x/term v0.3.0 // indirect
-	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/mod v0.8.0 // indirect
+	golang.org/x/term v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20230803162519-f966b187b2e5 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230803162519-f966b187b2e5 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
@@ -263,18 +267,18 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/gengo v0.0.0-20220902162205-c0856e24416d // indirect
 	k8s.io/helm v2.17.0+incompatible // indirect
-	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
-	k8s.io/utils v0.0.0-20221107191617-1a15be271d1d // indirect
+	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
+	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 // indirect
 	oras.land/oras-go v1.1.1 // indirect
 	sigs.k8s.io/kustomize/api v0.11.4 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.6 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.3.0 // indirect
 )
 
 require (
 	github.com/alecthomas/units v0.0.0-20201120081800-1786d5ef83d4 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20201106050909-4977a11b4351 // indirect
@@ -284,12 +288,12 @@ require (
 	github.com/spf13/cobra v1.6.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
-	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
-	golang.org/x/tools v0.2.0 // indirect
-	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
-	google.golang.org/genproto v0.0.0-20220421151946-72621c1f0bd3 // indirect
+	golang.org/x/oauth2 v0.8.0 // indirect
+	golang.org/x/tools v0.6.0 // indirect
+	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
+	google.golang.org/genproto v0.0.0-20230815205213-6bfd019c3878 // indirect
 	k8s.io/kubectl v0.24.0
-	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
+	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 )
 
 // Pinned to kubernetes-1.23.12
@@ -321,6 +325,7 @@ replace (
 	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.24.1
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.24.1
 	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.24.1
+	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280
 	k8s.io/kube-proxy => k8s.io/kube-proxy v0.24.1
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.24.1
 	k8s.io/kubectl => k8s.io/kubectl v0.24.1

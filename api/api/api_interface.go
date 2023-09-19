@@ -242,6 +242,10 @@ type ApplicationInterface interface {
 	DeleteGovernanceModeCR(w http.ResponseWriter, r *http.Request)
 	GetWatchOperatorManaged(w http.ResponseWriter, r *http.Request)
 	ChangeVolumes(w http.ResponseWriter, r *http.Request)
+	GetAppAuthorizationPolicy(w http.ResponseWriter, r *http.Request)
+	UpdateAppAuthorizationPolicy(w http.ResponseWriter, r *http.Request)
+	GetAppPeerAuthentications(w http.ResponseWriter, r *http.Request)
+	UpdateAppPeerAuthentications(w http.ResponseWriter, r *http.Request)
 }
 
 // Gatewayer gateway api interface

@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	"os"
 	gateway "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/typed/apis/v1beta1"
 	"sigs.k8s.io/yaml"
@@ -49,6 +50,7 @@ type ApplicationAction struct {
 	dynamicClient  dynamic.Interface
 	kruiseClient   *kruise_versioned.Clientset
 	gatewayClient  *gateway.GatewayV1beta1Client
+	config         *rest.Config
 }
 
 // ApplicationHandler defines handler methods to TenantApplication.
@@ -92,13 +94,27 @@ type ApplicationHandler interface {
 	OpenAppGrayscaleRelease(appID, namespace string) (string, error)
 	NextBatchAppGrayscaleRelease(ctx context.Context, appID, namespace string) error
 	RollBackAppGrayscaleRelease(ctx context.Context, appID, namespace string) (map[string]map[string]string, error)
+	GetAppPeerAuthentications(ctx context.Context, namespace, name string) (string, error)
+	UpdateAppPeerAuthentications(ctx context.Context, pa model.AppPeerAuthentications) (*dbmodel.K8sResource, error)
+	GetAppAuthorizationPolicy(ctx context.Context, namespace, name string) (string, error)
+	UpdateAppAuthorizationPolicy(ctx context.Context, ap model.AppAuthorizationPolicy) ([]*dbmodel.K8sResource, error)
 }
 
 // NewApplicationHandler creates a new Tenant Application Handler.
-func NewApplicationHandler(conf option.Config, statusCli *client.AppRuntimeSyncClient, promClient prometheus.Interface, rainbondClient versioned.Interface, kubeClient clientset.Interface, dynamicClient dynamic.Interface, kruiseClient *kruise_versioned.Clientset, gatewayClient *gateway.GatewayV1beta1Client) ApplicationHandler {
+func NewApplicationHandler(
+	conf option.Config,
+	config *rest.Config,
+	statusCli *client.AppRuntimeSyncClient,
+	promClient prometheus.Interface,
+	rainbondClient versioned.Interface,
+	kubeClient clientset.Interface,
+	dynamicClient dynamic.Interface,
+	kruiseClient *kruise_versioned.Clientset,
+	gatewayClient *gateway.GatewayV1beta1Client) ApplicationHandler {
 	return &ApplicationAction{
 		conf:           conf,
 		statusCli:      statusCli,
+		config:         config,
 		promClient:     promClient,
 		rainbondClient: rainbondClient,
 		kubeClient:     kubeClient,
@@ -1009,7 +1025,7 @@ func (a *ApplicationAction) CheckGovernanceMode(ctx context.Context, governanceM
 	return nil
 }
 
-//GetAndHandleOperatorManaged get operator managed component
+// GetAndHandleOperatorManaged get operator managed component
 func (a *ApplicationAction) GetAndHandleOperatorManaged(appID string) (*pb.OperatorManaged, error) {
 	watchData, err := a.statusCli.GetOperatorWatchData(appID)
 	if err != nil {

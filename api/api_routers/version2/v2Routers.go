@@ -412,6 +412,10 @@ func (v2 *V2) applicationRouter() chi.Router {
 	// Init Application
 	r.Use(middleware.InitApplication)
 	// app governance mode
+	r.Get("/app_authorization_policy", controller.GetManager().GetAppAuthorizationPolicy)
+	r.Get("/app_peer_authentications", controller.GetManager().GetAppPeerAuthentications)
+	r.Put("/app_authorization_policy", controller.GetManager().UpdateAppAuthorizationPolicy)
+	r.Put("/app_peer_authentications", controller.GetManager().UpdateAppPeerAuthentications)
 	r.Post("/gray_release", controller.GetManager().AddGrayRelease)
 	r.Put("/gray_release", controller.GetManager().UpdateGrayRelease)
 	r.Get("/gray_release", controller.GetManager().GetGrayRelease)

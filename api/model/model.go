@@ -2296,3 +2296,27 @@ type FlowEntryRule struct {
 	HeaderType  string `json:"header_type"`
 	HeaderValue string `json:"header_value"`
 }
+
+type AppPeerAuthentications struct {
+	Name        string `json:"name"`
+	Namespace   string `json:"namespace"`
+	AppID       string `json:"app_id"`
+	OperateMode bool   `json:"operating_mode"`
+}
+
+type AppAuthorizationPolicy struct {
+	Name           string          `json:"name"`
+	Namespace      string          `json:"namespace"`
+	AppID          string          `json:"app_id"`
+	OperateMode    bool            `json:"operating_mode"`
+	TenantID       string          `json:"tenant_id"`
+	ComponentInfos []ComponentInfo `json:"component_infos"`
+}
+
+type ComponentInfo struct {
+	ComponentID               string   `json:"component_id"`
+	IsCreateSA                bool     `json:"is_create_sa"`
+	SAName                    string   `json:"sa_name"`
+	DependentComponentSANames []string `json:"dependent_component_sa_names"`
+	PortOuter                 []string `json:"port_outer"`
+}
