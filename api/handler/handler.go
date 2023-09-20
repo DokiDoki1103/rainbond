@@ -71,6 +71,7 @@ func InitHandle(conf option.Config,
 		logrus.Errorf("new prometheus client failure, %v", err)
 		return err
 	}
+
 	dbmanager := db.GetManager()
 	defaultServieHandler = CreateManager(conf, mqClient, etcdcli, statusCli, prometheusCli, rainbondClient, kubeClient, config)
 	defaultPluginHandler = CreatePluginManager(mqClient)
@@ -87,7 +88,7 @@ func InitHandle(conf option.Config,
 		logrus.Errorf("create token identification mannager error, %v", err)
 		return err
 	}
-	defaultGatewayHandler = CreateGatewayManager(dbmanager, mqClient, etcdcli, gatewayClient, kubeClient)
+	defaultGatewayHandler = CreateGatewayManager(dbmanager, mqClient, etcdcli, gatewayClient, kubeClient, config)
 	def3rdPartySvcHandler = Create3rdPartySvcHandler(dbmanager, statusCli)
 	operationHandler = CreateOperationHandler(mqClient)
 	batchOperationHandler = CreateBatchOperationHandler(mqClient, statusCli, operationHandler)

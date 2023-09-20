@@ -31,10 +31,13 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	v1 "istio.io/api/security/v1"
+	"istio.io/client-go/pkg/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"os"
 	"sigs.k8s.io/gateway-api/apis/v1beta1"
 	gateway "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/typed/apis/v1beta1"
@@ -52,20 +55,29 @@ type GatewayAction struct {
 	etcdCli       *clientv3.Client
 	gatewayClient *gateway.GatewayV1beta1Client
 	kubeClient    kubernetes.Interface
+	config        *rest.Config
 }
 
-//CreateGatewayManager creates gateway manager.
-func CreateGatewayManager(dbmanager db.Manager, mqclient client.MQClient, etcdCli *clientv3.Client, gatewayClient *gateway.GatewayV1beta1Client, kubeClient kubernetes.Interface) *GatewayAction {
+// CreateGatewayManager creates gateway manager.
+func CreateGatewayManager(
+	dbmanager db.Manager,
+	mqclient client.MQClient,
+	etcdCli *clientv3.Client,
+	gatewayClient *gateway.GatewayV1beta1Client,
+	kubeClient kubernetes.Interface,
+	config *rest.Config,
+) *GatewayAction {
 	return &GatewayAction{
 		dbmanager:     dbmanager,
 		mqclient:      mqclient,
 		etcdCli:       etcdCli,
 		gatewayClient: gatewayClient,
 		kubeClient:    kubeClient,
+		config:        config,
 	}
 }
 
-//BatchGetGatewayHTTPRoute batch get gateway http route
+// BatchGetGatewayHTTPRoute batch get gateway http route
 func (g *GatewayAction) BatchGetGatewayHTTPRoute(namespace, appID string) ([]*apimodel.GatewayHTTPRouteConcise, error) {
 	var httpRoutes []v1beta1.HTTPRoute
 	if appID != "" {
@@ -123,7 +135,7 @@ func (g *GatewayAction) BatchGetGatewayHTTPRoute(namespace, appID string) ([]*ap
 	return HTTPRouteConcise, nil
 }
 
-//AddGatewayCertificate create gateway certificate
+// AddGatewayCertificate create gateway certificate
 func (g *GatewayAction) AddGatewayCertificate(req *apimodel.GatewayCertificate) error {
 	_, err := g.kubeClient.CoreV1().Secrets(req.Namespace).Create(context.Background(), &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -147,7 +159,7 @@ func (g *GatewayAction) AddGatewayCertificate(req *apimodel.GatewayCertificate) 
 	return nil
 }
 
-//UpdateGatewayCertificate update gateway certificate
+// UpdateGatewayCertificate update gateway certificate
 func (g *GatewayAction) UpdateGatewayCertificate(req *apimodel.GatewayCertificate) error {
 	secret, err := g.kubeClient.CoreV1().Secrets(req.Namespace).Get(context.Background(), req.Name, metav1.GetOptions{})
 	if err != nil {
@@ -188,7 +200,7 @@ func (g *GatewayAction) UpdateGatewayCertificate(req *apimodel.GatewayCertificat
 	return nil
 }
 
-//DeleteGatewayCertificate delete gateway certificate
+// DeleteGatewayCertificate delete gateway certificate
 func (g *GatewayAction) DeleteGatewayCertificate(name, namespace string) error {
 	err := g.kubeClient.CoreV1().Secrets(namespace).Delete(context.Background(), name, metav1.DeleteOptions{})
 	if err != nil && !k8serror.IsNotFound(err) {
@@ -320,19 +332,23 @@ func handleGatewayRules(rRules []*apimodel.Rules) []v1beta1.HTTPRouteRule {
 	return rules
 }
 
-func (g *GatewayAction) DeleteOuterPortGatewayHTTPRoute(name, namespace, appID string) (*apimodel.GatewayHTTPRouteConcise, error) {
-	opHTTPRoute, err := g.GetOuterPortGatewayHTTPRoute(name, namespace)
+func (g *GatewayAction) DeleteOuterPortGatewayHTTPRoute(req *apimodel.OldOuterPortGatewayHTTPRouteStruct) (*apimodel.GatewayHTTPRouteConcise, error) {
+	err := g.updateAuthorizationPolicies(req.Namespace, req.ServiceID, "close", req.Port)
 	if err != nil {
 		return nil, err
 	}
-	err = g.DeleteGatewayHTTPRoute(name, namespace, appID)
+	opHTTPRoute, err := g.GetOuterPortGatewayHTTPRoute(req.Name, req.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	err = g.DeleteGatewayHTTPRoute(req.Name, req.Namespace, req.AppID)
 	if err != nil {
 		return nil, err
 	}
 	return opHTTPRoute, nil
 }
 
-//GetOuterPortGatewayHTTPRoute get outer port gateway http route
+// GetOuterPortGatewayHTTPRoute get outer port gateway http route
 func (g *GatewayAction) GetOuterPortGatewayHTTPRoute(name, namespace string) (*apimodel.GatewayHTTPRouteConcise, error) {
 	httproute, err := g.gatewayClient.HTTPRoutes(namespace).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil && !k8serror.IsNotFound(err) {
@@ -366,8 +382,12 @@ func (g *GatewayAction) GetOuterPortGatewayHTTPRoute(name, namespace string) (*a
 }
 
 func (g *GatewayAction) CreateOuterPortGatewayHTTPRoute(req *apimodel.OldOuterPortGatewayHTTPRouteStruct) (*model.K8sResource, error) {
+	err := g.updateAuthorizationPolicies(req.Namespace, req.ServiceID, "open", req.Port)
+	if err != nil {
+		return nil, err
+	}
 	var route v1beta1.HTTPRoute
-	err := yaml.Unmarshal([]byte(req.RouteYaml), &route)
+	err = yaml.Unmarshal([]byte(req.RouteYaml), &route)
 	if err != nil {
 		return nil, err
 	}
@@ -419,10 +439,101 @@ func (g *GatewayAction) CreateOuterPortGatewayHTTPRoute(req *apimodel.OldOuterPo
 	return k8sresource[0], nil
 }
 
+func (g *GatewayAction) updateAuthorizationPolicies(namespace, serviceID, operation string, port int) error {
+	ic, err := versioned.NewForConfig(g.config)
+	if err != nil {
+		return err
+	}
+	aps, err := ic.SecurityV1().AuthorizationPolicies(namespace).List(context.Background(), metav1.ListOptions{LabelSelector: "service_id=" + serviceID})
+	if err != nil {
+		return err
+	}
+	if aps == nil || len(aps.Items) == 0 {
+		return nil
+	}
+	ap := aps.Items[0]
+	if ap.Spec.Rules == nil || len(ap.Spec.Rules) == 0 {
+		return nil
+	}
+	ruleToExist := false
+	rules := ap.Spec.Rules
+	for _, rule := range rules {
+		if rule.From != nil && len(rule.From) > 0 {
+			continue
+		}
+		if rule.When != nil && len(rule.When) > 0 {
+			continue
+		}
+		if rule.To != nil && len(rule.To) > 0 {
+			ruleTo := rule.To
+			ruleToExist = true
+			toPortExist := false
+			for _, to := range ruleTo {
+				if to.Operation.Hosts != nil && len(to.Operation.Hosts) > 0 {
+					continue
+				}
+				if to.Operation.NotHosts != nil && len(to.Operation.NotHosts) > 0 {
+					continue
+				}
+				if to.Operation.Paths != nil && len(to.Operation.Paths) > 0 {
+					continue
+				}
+				if to.Operation.NotPaths != nil && len(to.Operation.NotPaths) > 0 {
+					continue
+				}
+				if to.Operation.Methods != nil && len(to.Operation.Methods) > 0 {
+					continue
+				}
+				if to.Operation.NotMethods != nil && len(to.Operation.NotMethods) > 0 {
+					continue
+				}
+				if to.Operation.NotPorts != nil && len(to.Operation.NotPorts) > 0 {
+					continue
+				}
+				if to.Operation.Ports != nil && len(to.Operation.Ports) > 0 {
+					toPortExist = true
+					if operation == "open" {
+						to.Operation.Ports = append(to.Operation.Ports, strconv.Itoa(port))
+						continue
+					}
+					for i := 0; i < len(to.Operation.Ports); i++ {
+						p := to.Operation.Ports[i]
+						if p == strconv.Itoa(port) {
+							to.Operation.Ports = append(to.Operation.Ports[:i], to.Operation.Ports[i+1:]...)
+							i--
+						}
+					}
+					if len(to.Operation.Ports) == 0 {
+						to.Operation = nil
+					}
+				}
+			}
+			if !toPortExist && operation == "open" {
+				rule.To = append(rule.To, &v1.Rule_To{Operation: &v1.Operation{Ports: []string{strconv.Itoa(port)}}})
+			}
+		}
+	}
+	if !ruleToExist && operation == "open" {
+		rules = append(rules, &v1.Rule{
+			To: []*v1.Rule_To{{Operation: &v1.Operation{Ports: []string{strconv.Itoa(port)}}}},
+		})
+	}
+	_, err = ic.SecurityV1().AuthorizationPolicies(namespace).Update(context.Background(), ap, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (g *GatewayAction) AddOuterPortGatewayHTTPRoute(outerPortRoute *apimodel.OuterPortGatewayHTTPRouteStruct) (*model.K8sResource, error) {
+	err := g.updateAuthorizationPolicies(outerPortRoute.Namespace, outerPortRoute.ServiceID, "open", outerPortRoute.Port)
+	if err != nil {
+		return nil, err
+	}
 	hosts := []string{outerPortRoute.Host}
 	labels := make(map[string]string)
 	labels["app_id"] = outerPortRoute.AppID
+	labels["service_id"] = outerPortRoute.ServiceID
 	rRules := []*apimodel.Rules{{
 		BackendRefsRules: []*apimodel.BackendRefsRule{{
 			outerPortRoute.ServiceName,
@@ -446,8 +557,11 @@ func (g *GatewayAction) AddOuterPortGatewayHTTPRoute(outerPortRoute *apimodel.Ou
 	return g.AddGatewayHTTPRoute(req)
 }
 
-//AddGatewayHTTPRoute create gateway http route
+// AddGatewayHTTPRoute create gateway http route
 func (g *GatewayAction) AddGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStruct) (*model.K8sResource, error) {
+	//check zero trust
+
+	//create gateway httpRoute
 	gatewayNamespace := v1beta1.Namespace(req.GatewayNamespace)
 	gatewayKind := v1beta1.Kind(req.GatewayKind)
 	var hosts []v1beta1.Hostname
@@ -512,7 +626,7 @@ func (g *GatewayAction) AddGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStruct
 	return k8sresource[0], nil
 }
 
-//GetGatewayHTTPRoute get gateway http route
+// GetGatewayHTTPRoute get gateway http route
 func (g *GatewayAction) GetGatewayHTTPRoute(name, namespace string) (*apimodel.GatewayHTTPRouteStruct, error) {
 	var req apimodel.GatewayHTTPRouteStruct
 	route, err := g.gatewayClient.HTTPRoutes(namespace).Get(context.Background(), name, metav1.GetOptions{})
@@ -689,7 +803,7 @@ func (g *GatewayAction) GetGatewayHTTPRoute(name, namespace string) (*apimodel.G
 	return &req, nil
 }
 
-//UpdateGatewayHTTPRoute update gateway http route
+// UpdateGatewayHTTPRoute update gateway http route
 func (g *GatewayAction) UpdateGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStruct) (*model.K8sResource, error) {
 	rules := handleGatewayRules(req.Rules)
 	gatewayKind := v1beta1.Kind(req.GatewayKind)
@@ -751,7 +865,7 @@ func (g *GatewayAction) UpdateGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStr
 	return &res, nil
 }
 
-//DeleteGatewayHTTPRoute delete gateway http route
+// DeleteGatewayHTTPRoute delete gateway http route
 func (g *GatewayAction) DeleteGatewayHTTPRoute(name, namespace, appID string) error {
 	err := g.gatewayClient.HTTPRoutes(namespace).Delete(context.Background(), name, metav1.DeleteOptions{})
 	if err != nil && !k8serror.IsNotFound(err) {
@@ -1577,13 +1691,13 @@ func (g *GatewayAction) ListHTTPRulesByCertID(certID string) ([]*model.HTTPRule,
 	return db.GetManager().HTTPRuleDao().ListByCertID(certID)
 }
 
-//IPAndAvailablePort ip and advice available port
+// IPAndAvailablePort ip and advice available port
 type IPAndAvailablePort struct {
 	IP            string `json:"ip"`
 	AvailablePort int    `json:"available_port"`
 }
 
-//GetGatewayIPs get all gateway node ips
+// GetGatewayIPs get all gateway node ips
 func (g *GatewayAction) GetGatewayIPs() []IPAndAvailablePort {
 	defaultAvailablePort, _ := g.GetAvailablePort("0.0.0.0", false)
 	defaultIps := []IPAndAvailablePort{{
