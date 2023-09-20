@@ -450,6 +450,8 @@ type TenantServiceVolumeStruct struct {
 type DependService struct {
 	TenantID       string `json:"tenant_id"`
 	ServiceID      string `json:"service_id"`
+	Namespace      string `json:"namespace"`
+	DepSAName      string `json:"dep_sa_name"`
 	DepServiceID   string `json:"dep_service_id"`
 	DepServiceType string `json:"dep_service_type"`
 	Action         string `json:"action"`

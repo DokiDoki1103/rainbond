@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	apimodel "github.com/goodrain/rainbond/api/model"
+	apiutil "github.com/goodrain/rainbond/api/util"
 	"github.com/goodrain/rainbond/api/util/bcode"
 	"github.com/goodrain/rainbond/db"
 	"github.com/goodrain/rainbond/db/model"
@@ -31,8 +32,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	v1 "istio.io/api/security/v1"
-	"istio.io/client-go/pkg/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -333,7 +332,7 @@ func handleGatewayRules(rRules []*apimodel.Rules) []v1beta1.HTTPRouteRule {
 }
 
 func (g *GatewayAction) DeleteOuterPortGatewayHTTPRoute(req *apimodel.OldOuterPortGatewayHTTPRouteStruct) (*apimodel.GatewayHTTPRouteConcise, error) {
-	err := g.updateAuthorizationPolicies(req.Namespace, req.ServiceID, "close", req.Port)
+	err := apiutil.UpdateAuthorizationPolicies(req.Namespace, req.ServiceID, "close", req.Port, g.config, "")
 	if err != nil {
 		return nil, err
 	}
@@ -382,7 +381,7 @@ func (g *GatewayAction) GetOuterPortGatewayHTTPRoute(name, namespace string) (*a
 }
 
 func (g *GatewayAction) CreateOuterPortGatewayHTTPRoute(req *apimodel.OldOuterPortGatewayHTTPRouteStruct) (*model.K8sResource, error) {
-	err := g.updateAuthorizationPolicies(req.Namespace, req.ServiceID, "open", req.Port)
+	err := apiutil.UpdateAuthorizationPolicies(req.Namespace, req.ServiceID, "open", req.Port, g.config, "")
 	if err != nil {
 		return nil, err
 	}
@@ -439,94 +438,8 @@ func (g *GatewayAction) CreateOuterPortGatewayHTTPRoute(req *apimodel.OldOuterPo
 	return k8sresource[0], nil
 }
 
-func (g *GatewayAction) updateAuthorizationPolicies(namespace, serviceID, operation string, port int) error {
-	ic, err := versioned.NewForConfig(g.config)
-	if err != nil {
-		return err
-	}
-	aps, err := ic.SecurityV1().AuthorizationPolicies(namespace).List(context.Background(), metav1.ListOptions{LabelSelector: "service_id=" + serviceID})
-	if err != nil {
-		return err
-	}
-	if aps == nil || len(aps.Items) == 0 {
-		return nil
-	}
-	ap := aps.Items[0]
-	if ap.Spec.Rules == nil || len(ap.Spec.Rules) == 0 {
-		return nil
-	}
-	ruleToExist := false
-	rules := ap.Spec.Rules
-	for _, rule := range rules {
-		if rule.From != nil && len(rule.From) > 0 {
-			continue
-		}
-		if rule.When != nil && len(rule.When) > 0 {
-			continue
-		}
-		if rule.To != nil && len(rule.To) > 0 {
-			ruleTo := rule.To
-			ruleToExist = true
-			toPortExist := false
-			for _, to := range ruleTo {
-				if to.Operation.Hosts != nil && len(to.Operation.Hosts) > 0 {
-					continue
-				}
-				if to.Operation.NotHosts != nil && len(to.Operation.NotHosts) > 0 {
-					continue
-				}
-				if to.Operation.Paths != nil && len(to.Operation.Paths) > 0 {
-					continue
-				}
-				if to.Operation.NotPaths != nil && len(to.Operation.NotPaths) > 0 {
-					continue
-				}
-				if to.Operation.Methods != nil && len(to.Operation.Methods) > 0 {
-					continue
-				}
-				if to.Operation.NotMethods != nil && len(to.Operation.NotMethods) > 0 {
-					continue
-				}
-				if to.Operation.NotPorts != nil && len(to.Operation.NotPorts) > 0 {
-					continue
-				}
-				if to.Operation.Ports != nil && len(to.Operation.Ports) > 0 {
-					toPortExist = true
-					if operation == "open" {
-						to.Operation.Ports = append(to.Operation.Ports, strconv.Itoa(port))
-						continue
-					}
-					for i := 0; i < len(to.Operation.Ports); i++ {
-						p := to.Operation.Ports[i]
-						if p == strconv.Itoa(port) {
-							to.Operation.Ports = append(to.Operation.Ports[:i], to.Operation.Ports[i+1:]...)
-							i--
-						}
-					}
-					if len(to.Operation.Ports) == 0 {
-						to.Operation = nil
-					}
-				}
-			}
-			if !toPortExist && operation == "open" {
-				rule.To = append(rule.To, &v1.Rule_To{Operation: &v1.Operation{Ports: []string{strconv.Itoa(port)}}})
-			}
-		}
-	}
-	if !ruleToExist && operation == "open" {
-		rules = append(rules, &v1.Rule{
-			To: []*v1.Rule_To{{Operation: &v1.Operation{Ports: []string{strconv.Itoa(port)}}}},
-		})
-	}
-	_, err = ic.SecurityV1().AuthorizationPolicies(namespace).Update(context.Background(), ap, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (g *GatewayAction) AddOuterPortGatewayHTTPRoute(outerPortRoute *apimodel.OuterPortGatewayHTTPRouteStruct) (*model.K8sResource, error) {
-	err := g.updateAuthorizationPolicies(outerPortRoute.Namespace, outerPortRoute.ServiceID, "open", outerPortRoute.Port)
+	err := apiutil.UpdateAuthorizationPolicies(outerPortRoute.Namespace, outerPortRoute.ServiceID, "open", outerPortRoute.Port, g.config, "")
 	if err != nil {
 		return nil, err
 	}
