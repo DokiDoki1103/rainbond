@@ -1188,6 +1188,7 @@ func (s *ServiceAction) ServiceDepend(action string, ds *api_model.DependService
 			}
 			return err
 		}
+		ds.DepSAName = fmt.Sprintf("cluster.local/ns/%v/sa/%v", ds.Namespace, ds.DepSAName)
 		err := util.UpdateAuthorizationPolicies(ds.Namespace, ds.DepServiceID, "open", 0, s.config, ds.DepSAName)
 		if err != nil {
 			return err
@@ -1198,6 +1199,7 @@ func (s *ServiceAction) ServiceDepend(action string, ds *api_model.DependService
 			logrus.Errorf("delete depend error, %v", err)
 			return err
 		}
+		ds.DepSAName = fmt.Sprintf("cluster.local/ns/%v/sa/%v", ds.Namespace, ds.DepSAName)
 		err := util.UpdateAuthorizationPolicies(ds.Namespace, ds.DepServiceID, "close", 0, s.config, ds.DepSAName)
 		if err != nil {
 			return err

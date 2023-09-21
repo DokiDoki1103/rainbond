@@ -367,7 +367,8 @@ func (v2 *V2) serviceRouter() chi.Router {
 	r.Delete("/k8s-attributes", middleware.WrapEL(controller.GetManager().K8sAttributes, dbmodel.TargetTypeService, "delete-component-k8s-attributes", dbmodel.SYNEVENTTYPE, false))
 	//插件
 	r.Mount("/plugin", v2.serviceRelatePluginRouter())
-
+	// Component AuthorizationPolicy
+	r.Get("/component_authorization_policy", controller.GetManager().GetComponentAuthorizationPolicy)
 	//rule
 	r.Mount("/net-rule", v2.rulesRouter())
 	r.Get("/deploy-info", controller.GetServiceDeployInfo)

@@ -22,9 +22,6 @@ func UpdateAuthorizationPolicies(namespace, serviceID, operation string, port in
 		return nil
 	}
 	ap := aps.Items[0]
-	if ap.Spec.Rules == nil || len(ap.Spec.Rules) == 0 {
-		return nil
-	}
 	ruleExist := false
 	rules := ap.Spec.Rules
 	for _, rule := range rules {
@@ -38,8 +35,16 @@ func UpdateAuthorizationPolicies(namespace, serviceID, operation string, port in
 			if rule.From != nil && len(rule.From) > 0 {
 				ruleFrom := rule.From
 				ruleExist = true
-				principalExist := false
 				for _, from := range ruleFrom {
+					if from.Source == nil && operation == "close" {
+						continue
+					}
+					if from.Source == nil {
+						rule.From = []*v1.Rule_From{{Source: &v1.Source{
+							Principals: []string{depSAName},
+						}}}
+						break
+					}
 					if from.Source.IpBlocks != nil && len(from.Source.IpBlocks) > 0 {
 						continue
 					}
@@ -68,7 +73,6 @@ func UpdateAuthorizationPolicies(namespace, serviceID, operation string, port in
 						continue
 					}
 					if from.Source.Principals != nil && len(from.Source.Principals) > 0 {
-						principalExist = true
 						if operation == "open" {
 							from.Source.Principals = append(from.Source.Principals, depSAName)
 							continue
@@ -80,14 +84,14 @@ func UpdateAuthorizationPolicies(namespace, serviceID, operation string, port in
 								i--
 							}
 						}
-						if len(from.Source.Principals) == 0 {
-							from.Source = nil
-						}
+					} else if operation == "open" {
+						from.Source.Principals = []string{depSAName}
 					}
 				}
-				if !principalExist && operation == "open" {
-					rule.From = append(rule.From, &v1.Rule_From{Source: &v1.Source{Principals: []string{depSAName}}})
-				}
+			} else if operation == "open" {
+				rule.From = []*v1.Rule_From{{Source: &v1.Source{
+					Principals: []string{depSAName},
+				}}}
 			}
 		}
 		if port != 0 {
@@ -97,8 +101,16 @@ func UpdateAuthorizationPolicies(namespace, serviceID, operation string, port in
 			if rule.To != nil && len(rule.To) > 0 {
 				ruleTo := rule.To
 				ruleExist = true
-				toPortExist := false
 				for _, to := range ruleTo {
+					if to.Operation == nil && operation == "close" {
+						continue
+					}
+					if to.Operation == nil {
+						rule.To = []*v1.Rule_To{{Operation: &v1.Operation{
+							Ports: []string{strconv.Itoa(port)},
+						}}}
+						break
+					}
 					if to.Operation.Hosts != nil && len(to.Operation.Hosts) > 0 {
 						continue
 					}
@@ -121,10 +133,9 @@ func UpdateAuthorizationPolicies(namespace, serviceID, operation string, port in
 						continue
 					}
 					if to.Operation.Ports != nil && len(to.Operation.Ports) > 0 {
-						toPortExist = true
 						if operation == "open" {
 							to.Operation.Ports = append(to.Operation.Ports, strconv.Itoa(port))
-							continue
+							break
 						}
 						for i := 0; i < len(to.Operation.Ports); i++ {
 							p := to.Operation.Ports[i]
@@ -133,14 +144,13 @@ func UpdateAuthorizationPolicies(namespace, serviceID, operation string, port in
 								i--
 							}
 						}
-						if len(to.Operation.Ports) == 0 {
-							to.Operation = nil
-						}
+					} else if operation == "open" {
+						to.Operation.Ports = []string{strconv.Itoa(port)}
 					}
 				}
-				if !toPortExist && operation == "open" {
-					rule.To = append(rule.To, &v1.Rule_To{Operation: &v1.Operation{Ports: []string{strconv.Itoa(port)}}})
-				}
+			} else if operation == "open" {
+				ruleExist = true
+				rule.To = []*v1.Rule_To{{Operation: &v1.Operation{Ports: []string{strconv.Itoa(port)}}}}
 			}
 		}
 	}
@@ -154,6 +164,7 @@ func UpdateAuthorizationPolicies(namespace, serviceID, operation string, port in
 			From: []*v1.Rule_From{{Source: &v1.Source{Principals: []string{depSAName}}}},
 		})
 	}
+	ap.Spec.Rules = rules
 	_, err = ic.SecurityV1().AuthorizationPolicies(namespace).Update(context.Background(), ap, metav1.UpdateOptions{})
 	if err != nil {
 		return err

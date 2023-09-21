@@ -31,7 +31,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-//ServiceHandler service handler
+// ServiceHandler service handler
 type ServiceHandler interface {
 	ServiceBuild(tenantID, serviceID string, r *api_model.BuildServiceStruct) error
 	AddLabel(l *api_model.LabelsStruct, serviceID string) error
@@ -99,6 +99,7 @@ type ServiceHandler interface {
 	ReviseAttributeAffinityByArch(attributeValue string, arch string) (string, error)
 	GetK8sAttribute(componentID, name string) (*dbmodel.ComponentK8sAttributes, error)
 	CreateK8sAttribute(tenantID, componentID string, k8sAttr *api_model.ComponentK8sAttribute) error
+	GetComponentAuthorizationPolicy(namespace, service_id string) (map[string]string, error)
 	UpdateK8sAttribute(componentID string, k8sAttributes *api_model.ComponentK8sAttribute) error
 	DeleteK8sAttribute(componentID, name string) error
 
