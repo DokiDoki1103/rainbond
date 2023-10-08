@@ -888,7 +888,7 @@ func (t *TenantStruct) OpenSecurityContext(w http.ResponseWriter, r *http.Reques
 	return
 }
 
-//StatusService -
+// StatusService -
 func (t *TenantStruct) StatusService(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /v2/tenants/{tenant_name}/services/{service_alias}/status v2 serviceStatus
 	//
@@ -1157,6 +1157,8 @@ func (t *TenantStruct) AddDependency(w http.ResponseWriter, r *http.Request) {
 	rules := validator.MapData{
 		"dep_service_id":   []string{"required"},
 		"dep_service_type": []string{"required"},
+		"namespace":        []string{"required"},
+		"dep_sa_name":      []string{},
 		"dep_order":        []string{},
 	}
 	data, ok := httputil.ValidatorRequestMapAndErrorResponse(r, w, rules, nil)
@@ -1168,6 +1170,8 @@ func (t *TenantStruct) AddDependency(w http.ResponseWriter, r *http.Request) {
 		ServiceID:      r.Context().Value(ctxutil.ContextKey("service_id")).(string),
 		DepServiceID:   data["dep_service_id"].(string),
 		DepServiceType: data["dep_service_type"].(string),
+		DepSAName:      data["dep_sa_name"].(string),
+		Namespace:      data["namespace"].(string),
 	}
 	if err := handler.GetServiceManager().ServiceDepend("add", ds); err != nil {
 		httputil.ReturnError(r, w, 500, fmt.Sprintf("add dependency error, %v", err))
@@ -1204,6 +1208,8 @@ func (t *TenantStruct) DeleteDependency(w http.ResponseWriter, r *http.Request) 
 		"dep_service_id":   []string{"required"},
 		"dep_service_type": []string{},
 		"dep_order":        []string{},
+		"namespace":        []string{"required"},
+		"dep_sa_name":      []string{},
 	}
 	data, ok := httputil.ValidatorRequestMapAndErrorResponse(r, w, rules, nil)
 	if !ok {
@@ -1213,6 +1219,8 @@ func (t *TenantStruct) DeleteDependency(w http.ResponseWriter, r *http.Request) 
 		TenantID:     r.Context().Value(ctxutil.ContextKey("tenant_id")).(string),
 		ServiceID:    r.Context().Value(ctxutil.ContextKey("service_id")).(string),
 		DepServiceID: data["dep_service_id"].(string),
+		DepSAName:    data["dep_sa_name"].(string),
+		Namespace:    data["namespace"].(string),
 	}
 	if err := handler.GetServiceManager().ServiceDepend("delete", ds); err != nil {
 		httputil.ReturnError(r, w, 500, fmt.Sprintf("delete dependency error, %v", err))

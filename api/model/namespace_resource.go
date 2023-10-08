@@ -44,6 +44,8 @@ const (
 	APIVersionSecret = "v1"
 	//APIVersionConfigMap -
 	APIVersionConfigMap = "v1"
+	//APIVersionServiceAccount -
+	APIVersionServiceAccount = "v1"
 	//APIVersionPersistentVolumeClaim -
 	APIVersionPersistentVolumeClaim = "v1"
 	//APIVersionStatefulSet -

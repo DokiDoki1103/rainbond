@@ -32,13 +32,18 @@ type ComponentIngressTask struct {
 	IsInner     bool   `json:"is_inner"`
 }
 
-//GatewayHandler gateway api handler
+// GatewayHandler gateway api handler
 type GatewayHandler interface {
 	BatchGetGatewayHTTPRoute(namespace, appID string) ([]*apimodel.GatewayHTTPRouteConcise, error)
 
 	AddGatewayCertificate(req *apimodel.GatewayCertificate) error
 	UpdateGatewayCertificate(req *apimodel.GatewayCertificate) error
 	DeleteGatewayCertificate(name, namespace string) error
+
+	AddOuterPortGatewayHTTPRoute(ruleStruct *apimodel.OuterPortGatewayHTTPRouteStruct) (*dbmodel.K8sResource, error)
+	GetOuterPortGatewayHTTPRoute(name, namespace string) (*apimodel.GatewayHTTPRouteConcise, error)
+	DeleteOuterPortGatewayHTTPRoute(req *apimodel.OldOuterPortGatewayHTTPRouteStruct) (*apimodel.GatewayHTTPRouteConcise, error)
+	CreateOuterPortGatewayHTTPRoute(req *apimodel.OldOuterPortGatewayHTTPRouteStruct) (*dbmodel.K8sResource, error)
 
 	AddGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStruct) (*dbmodel.K8sResource, error)
 	GetGatewayHTTPRoute(name, namespace string) (*apimodel.GatewayHTTPRouteStruct, error)

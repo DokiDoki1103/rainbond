@@ -66,7 +66,7 @@ func (g *GatewayStruct) HTTPLimitingPolicy(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-//GatewayCertificate k8s gateway certificate related operations
+// GatewayCertificate k8s gateway certificate related operations
 func (g *GatewayStruct) GatewayCertificate(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "PUT":
@@ -78,7 +78,7 @@ func (g *GatewayStruct) GatewayCertificate(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-//BatchGatewayHTTPRoute k8s gateway http route batch operation
+// BatchGatewayHTTPRoute k8s gateway http route batch operation
 func (g *GatewayStruct) BatchGatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -86,7 +86,20 @@ func (g *GatewayStruct) BatchGatewayHTTPRoute(w http.ResponseWriter, r *http.Req
 	}
 }
 
-//GatewayHTTPRoute k8s gateway http route related operations
+func (g *GatewayStruct) OuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		g.getOuterPortGatewayHTTPRoute(w, r)
+	case "POST":
+		g.addOuterPortGatewayHTTPRoute(w, r)
+	case "PUT":
+		g.createOuterPortGatewayHTTPRoute(w, r)
+	case "DELETE":
+		g.deleteOuterPortGatewayHTTPRoute(w, r)
+	}
+}
+
+// GatewayHTTPRoute k8s gateway http route related operations
 func (g *GatewayStruct) GatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -111,6 +124,59 @@ func validateDomain(domain string) []string {
 		errs = k8svalidation.IsDNS1123Subdomain(domain)
 	}
 	return errs
+}
+
+func (g *GatewayStruct) getOuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("name")
+	namespace := r.FormValue("namespace")
+	res, err := handler.GetGatewayHandler().GetOuterPortGatewayHTTPRoute(name, namespace)
+	if err != nil {
+		httputil.ReturnError(r, w, 500, fmt.Sprintf("get outer port gateway http route failure: %v", err))
+		return
+	}
+	httputil.ReturnSuccess(r, w, res)
+}
+
+func (g *GatewayStruct) addOuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
+	var req api_model.OuterPortGatewayHTTPRouteStruct
+	ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &req, nil)
+	if !ok {
+		return
+	}
+	res, err := handler.GetGatewayHandler().AddOuterPortGatewayHTTPRoute(&req)
+	if err != nil {
+		httputil.ReturnError(r, w, 500, fmt.Sprintf("add outer port gateway http route failure: %v", err))
+		return
+	}
+	httputil.ReturnSuccess(r, w, res)
+}
+
+func (g *GatewayStruct) createOuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
+	var req api_model.OldOuterPortGatewayHTTPRouteStruct
+	ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &req, nil)
+	if !ok {
+		return
+	}
+	k8sResource, err := handler.GetGatewayHandler().CreateOuterPortGatewayHTTPRoute(&req)
+	if err != nil {
+		httputil.ReturnError(r, w, 500, fmt.Sprintf("create outer port gateway http route failure: %v", err))
+		return
+	}
+	httputil.ReturnSuccess(r, w, k8sResource)
+}
+
+func (g *GatewayStruct) deleteOuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request) {
+	var req api_model.OldOuterPortGatewayHTTPRouteStruct
+	ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &req, nil)
+	if !ok {
+		return
+	}
+	res, err := handler.GetGatewayHandler().DeleteOuterPortGatewayHTTPRoute(&req)
+	if err != nil {
+		httputil.ReturnError(r, w, 500, fmt.Sprintf("delete outer port gateway http route failure: %v", err))
+		return
+	}
+	httputil.ReturnSuccess(r, w, res)
 }
 
 func (g *GatewayStruct) addGatewayCertificate(w http.ResponseWriter, r *http.Request) {
@@ -483,7 +549,7 @@ func (g *GatewayStruct) Certificate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//updCertificate updates certificate and refresh http rules based on certificate id
+// updCertificate updates certificate and refresh http rules based on certificate id
 func (g *GatewayStruct) updCertificate(w http.ResponseWriter, r *http.Request) {
 	var req api_model.UpdCertificateReq
 	ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &req, nil)
@@ -504,7 +570,7 @@ func (g *GatewayStruct) updCertificate(w http.ResponseWriter, r *http.Request) {
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-//GetGatewayIPs get gateway ips
+// GetGatewayIPs get gateway ips
 func GetGatewayIPs(w http.ResponseWriter, r *http.Request) {
 	ips := handler.GetGatewayHandler().GetGatewayIPs()
 	httputil.ReturnSuccess(r, w, ips)

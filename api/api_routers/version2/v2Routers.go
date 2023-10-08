@@ -232,6 +232,11 @@ func (v2 *V2) tenantNameRouter() chi.Router {
 	r.Put("/gateway-http-route", controller.GetManager().GatewayHTTPRoute)
 	r.Delete("/gateway-http-route", controller.GetManager().GatewayHTTPRoute)
 
+	r.Get("/outer-port-gateway", controller.GetManager().OuterPortGatewayHTTPRoute)
+	r.Post("/outer-port-gateway", controller.GetManager().OuterPortGatewayHTTPRoute)
+	r.Delete("/outer-port-gateway", controller.GetManager().OuterPortGatewayHTTPRoute)
+	r.Put("/outer-port-gateway", controller.GetManager().OuterPortGatewayHTTPRoute)
+
 	r.Get("/batch-gateway-http-route", controller.GetManager().BatchGatewayHTTPRoute)
 
 	r.Post("/gateway-certificate", controller.GetManager().GatewayCertificate)
@@ -362,7 +367,8 @@ func (v2 *V2) serviceRouter() chi.Router {
 	r.Delete("/k8s-attributes", middleware.WrapEL(controller.GetManager().K8sAttributes, dbmodel.TargetTypeService, "delete-component-k8s-attributes", dbmodel.SYNEVENTTYPE, false))
 	//插件
 	r.Mount("/plugin", v2.serviceRelatePluginRouter())
-
+	// Component AuthorizationPolicy
+	r.Get("/component_authorization_policy", controller.GetManager().GetComponentAuthorizationPolicy)
 	//rule
 	r.Mount("/net-rule", v2.rulesRouter())
 	r.Get("/deploy-info", controller.GetServiceDeployInfo)
@@ -407,6 +413,10 @@ func (v2 *V2) applicationRouter() chi.Router {
 	// Init Application
 	r.Use(middleware.InitApplication)
 	// app governance mode
+	r.Get("/app_authorization_policy", controller.GetManager().GetAppAuthorizationPolicy)
+	r.Get("/app_peer_authentications", controller.GetManager().GetAppPeerAuthentications)
+	r.Put("/app_authorization_policy", controller.GetManager().UpdateAppAuthorizationPolicy)
+	r.Put("/app_peer_authentications", controller.GetManager().UpdateAppPeerAuthentications)
 	r.Post("/gray_release", controller.GetManager().AddGrayRelease)
 	r.Put("/gray_release", controller.GetManager().UpdateGrayRelease)
 	r.Get("/gray_release", controller.GetManager().GetGrayRelease)

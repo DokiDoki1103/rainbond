@@ -366,7 +366,7 @@ func (a *ApplicationController) DeleteGovernanceModeCR(w http.ResponseWriter, r 
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-//GetWatchOperatorManaged get watch operator managed component
+// GetWatchOperatorManaged get watch operator managed component
 func (a *ApplicationController) GetWatchOperatorManaged(w http.ResponseWriter, r *http.Request) {
 	app := r.Context().Value(ctxutil.ContextKey("application")).(*dbmodel.Application)
 	ret, err := handler.GetApplicationHandler().GetAndHandleOperatorManaged(app.AppID)
@@ -389,8 +389,8 @@ func (a *ApplicationController) ChangeVolumes(w http.ResponseWriter, r *http.Req
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-//AddGrayRelease -
-func (t *ApplicationController) AddGrayRelease(w http.ResponseWriter, r *http.Request) {
+// AddGrayRelease -
+func (a *ApplicationController) AddGrayRelease(w http.ResponseWriter, r *http.Request) {
 	var gr model.GrayReleaseModeReq
 	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &gr, nil); !ok {
 		return
@@ -404,8 +404,8 @@ func (t *ApplicationController) AddGrayRelease(w http.ResponseWriter, r *http.Re
 	httputil.ReturnSuccess(r, w, wasmYaml)
 }
 
-//UpdateGrayRelease -
-func (t *ApplicationController) UpdateGrayRelease(w http.ResponseWriter, r *http.Request) {
+// UpdateGrayRelease -
+func (a *ApplicationController) UpdateGrayRelease(w http.ResponseWriter, r *http.Request) {
 	var gr model.GrayReleaseModeReq
 	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &gr, nil); !ok {
 		return
@@ -419,8 +419,8 @@ func (t *ApplicationController) UpdateGrayRelease(w http.ResponseWriter, r *http
 	httputil.ReturnSuccess(r, w, wasmYaml)
 }
 
-//GetGrayRelease -
-func (t *ApplicationController) GetGrayRelease(w http.ResponseWriter, r *http.Request) {
+// GetGrayRelease -
+func (a *ApplicationController) GetGrayRelease(w http.ResponseWriter, r *http.Request) {
 	appID := r.FormValue("app_id")
 	componentID := r.FormValue("component_id")
 	namespace := r.FormValue("namespace")
@@ -433,8 +433,8 @@ func (t *ApplicationController) GetGrayRelease(w http.ResponseWriter, r *http.Re
 	httputil.ReturnSuccess(r, w, grayRelease)
 }
 
-//OperateGrayRelease -
-func (t *ApplicationController) OperateGrayRelease(w http.ResponseWriter, r *http.Request) {
+// OperateGrayRelease -
+func (a *ApplicationController) OperateGrayRelease(w http.ResponseWriter, r *http.Request) {
 	appID := r.FormValue("app_id")
 	namespace := r.FormValue("namespace")
 	operationMethod := r.FormValue("operation_method")
@@ -467,4 +467,65 @@ func (t *ApplicationController) OperateGrayRelease(w http.ResponseWriter, r *htt
 		return
 	}
 	httputil.ReturnSuccess(r, w, nil)
+}
+
+// GetAppPeerAuthentications -
+func (a *ApplicationController) GetAppPeerAuthentications(w http.ResponseWriter, r *http.Request) {
+	namespace := r.FormValue("namespace")
+	name := r.FormValue("name")
+	operatingMode, err := handler.GetApplicationHandler().GetAppPeerAuthentications(r.Context(), namespace, name)
+	if err != nil {
+		logrus.Errorf("get app PeerAuthentications failure: %v", err.Error())
+		httputil.ReturnError(r, w, 500, err.Error())
+		return
+	}
+	operationData := make(map[string]string)
+	operationData["operating_mode"] = operatingMode
+	httputil.ReturnSuccess(r, w, operationData)
+}
+
+// UpdateAppPeerAuthentications -
+func (a *ApplicationController) UpdateAppPeerAuthentications(w http.ResponseWriter, r *http.Request) {
+	var pa model.AppPeerAuthentications
+	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &pa, nil); !ok {
+		return
+	}
+	k8sResource, err := handler.GetApplicationHandler().UpdateAppPeerAuthentications(r.Context(), pa)
+	if err != nil {
+		logrus.Errorf("update app PeerAuthentications failure: %v", err.Error())
+		httputil.ReturnError(r, w, 500, err.Error())
+		return
+	}
+	httputil.ReturnSuccess(r, w, k8sResource)
+}
+
+// GetAppAuthorizationPolicy -
+func (a *ApplicationController) GetAppAuthorizationPolicy(w http.ResponseWriter, r *http.Request) {
+	namespace := r.FormValue("namespace")
+	name := r.FormValue("name")
+
+	operatingMode, err := handler.GetApplicationHandler().GetAppAuthorizationPolicy(r.Context(), namespace, name)
+	if err != nil {
+		logrus.Errorf("get app AuthorizationPolicy failure: %v", err.Error())
+		httputil.ReturnError(r, w, 500, err.Error())
+		return
+	}
+	operationData := make(map[string]string)
+	operationData["operating_mode"] = operatingMode
+	httputil.ReturnSuccess(r, w, operationData)
+}
+
+// UpdateAppAuthorizationPolicy -
+func (a *ApplicationController) UpdateAppAuthorizationPolicy(w http.ResponseWriter, r *http.Request) {
+	var ap model.AppAuthorizationPolicy
+	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &ap, nil); !ok {
+		return
+	}
+	k8sResource, err := handler.GetApplicationHandler().UpdateAppAuthorizationPolicy(r.Context(), ap)
+	if err != nil {
+		logrus.Errorf("update app AuthorizationPolicy failure: %v", err.Error())
+		httputil.ReturnError(r, w, 500, err.Error())
+		return
+	}
+	httputil.ReturnSuccess(r, w, k8sResource)
 }

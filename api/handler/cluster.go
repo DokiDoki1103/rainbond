@@ -582,6 +582,7 @@ func (c *clusterAction) BatchGetGateway(ctx context.Context) ([]*model.GatewayRe
 			}
 		}
 	}
+	protocolPort := make(map[string]int32)
 	for _, gc := range gateways.Items {
 		serviceName, ok := gc.Labels["service-name"]
 		var loadBalancerIP []string
@@ -598,6 +599,7 @@ func (c *clusterAction) BatchGetGateway(ctx context.Context) ([]*model.GatewayRe
 					ports := gatewayService.Spec.Ports
 					if ports != nil {
 						for _, port := range ports {
+							protocolPort[port.Name] = port.NodePort
 							if port.NodePort != 0 {
 								nodePort = append(nodePort, fmt.Sprintf("%v:%v(%v)", nodeIP, port.NodePort, port.Name))
 							}
@@ -624,6 +626,7 @@ func (c *clusterAction) BatchGetGateway(ctx context.Context) ([]*model.GatewayRe
 			LoadBalancerIP: loadBalancerIP,
 			NodePortIP:     nodePort,
 			ListenerNames:  listenerNames,
+			ProtocolPort:   protocolPort,
 		})
 	}
 	return gatewayList, nil

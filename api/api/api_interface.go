@@ -134,6 +134,7 @@ type ServiceInterface interface {
 	UpdateServiceMonitors(w http.ResponseWriter, r *http.Request)
 	UploadPackage(w http.ResponseWriter, r *http.Request)
 	K8sAttributes(w http.ResponseWriter, r *http.Request)
+	GetComponentAuthorizationPolicy(w http.ResponseWriter, r *http.Request)
 }
 
 // TenantInterfaceWithV1 funcs for both v2 and v1
@@ -242,6 +243,10 @@ type ApplicationInterface interface {
 	DeleteGovernanceModeCR(w http.ResponseWriter, r *http.Request)
 	GetWatchOperatorManaged(w http.ResponseWriter, r *http.Request)
 	ChangeVolumes(w http.ResponseWriter, r *http.Request)
+	GetAppAuthorizationPolicy(w http.ResponseWriter, r *http.Request)
+	UpdateAppAuthorizationPolicy(w http.ResponseWriter, r *http.Request)
+	GetAppPeerAuthentications(w http.ResponseWriter, r *http.Request)
+	UpdateAppPeerAuthentications(w http.ResponseWriter, r *http.Request)
 }
 
 // Gatewayer gateway api interface
@@ -251,6 +256,7 @@ type Gatewayer interface {
 	GetAvailablePort(w http.ResponseWriter, r *http.Request)
 	RuleConfig(w http.ResponseWriter, r *http.Request)
 	Certificate(w http.ResponseWriter, r *http.Request)
+	OuterPortGatewayHTTPRoute(w http.ResponseWriter, r *http.Request)
 	GatewayHTTPRoute(w http.ResponseWriter, r *http.Request)
 	BatchGatewayHTTPRoute(w http.ResponseWriter, r *http.Request)
 	GatewayCertificate(w http.ResponseWriter, r *http.Request)

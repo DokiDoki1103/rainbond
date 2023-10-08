@@ -81,9 +81,10 @@ type ExceptionNode struct {
 
 //GatewayResource -
 type GatewayResource struct {
-	Name           string   `json:"name"`
-	Namespace      string   `json:"namespace"`
-	LoadBalancerIP []string `json:"load_balancer_ip,omitempty"`
-	NodePortIP     []string `json:"node_port_ip,omitempty"`
-	ListenerNames  []string `json:"listener_names"`
+	Name           string           `json:"name"`
+	Namespace      string           `json:"namespace"`
+	LoadBalancerIP []string         `json:"load_balancer_ip,omitempty"`
+	NodePortIP     []string         `json:"node_port_ip,omitempty"`
+	ListenerNames  []string         `json:"listener_names"`
+	ProtocolPort   map[string]int32 `json:"protocol_port"`
 }
