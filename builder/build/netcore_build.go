@@ -20,10 +20,10 @@ package build
 
 import (
 	"fmt"
+	"github.com/goodrain/rainbond/builder/parser/code"
 	"github.com/goodrain/rainbond/db"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
-	"github.com/goodrain/rainbond/builder/parser/code"
 	"io/ioutil"
 	"os"
 	"path"
@@ -97,12 +97,13 @@ func (d *customDockerfileBuild) Build(re *Request) (*Response, error) {
 		return nil, fmt.Errorf("write default dockerfile error:%s", err.Error())
 	}
 	codeInspectSwitch := false
-	codeInspect, err := db.GetManager().TenantServiceCodeInspectionDao().GetTenantServiceCodeInspection(re.ServiceID)
+
+	Inspect, err := db.GetManager().TenantServiceInspectionDao().GetTenantServiceInspection(re.ServiceID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("get tenant service code inspection filure: %v", err)
 	}
-	if codeInspect != nil {
-		codeInspectSwitch = codeInspect.Switch
+	if Inspect != nil {
+		codeInspectSwitch = Inspect.CodeOpen
 	}
 	// build image
 	err = sources.ImageBuild(

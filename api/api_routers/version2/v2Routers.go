@@ -296,9 +296,9 @@ func (v2 *V2) serviceRouter() chi.Router {
 	//配置安全开关
 	r.Put("/security_context", controller.GetManager().SecurityContextService)
 	r.Delete("/security_context", controller.GetManager().SecurityContextService)
-	//源码安全
-	r.Put("/code_inspection", controller.GetManager().CodeInspectionService)
-	r.Delete("/code_inspection", controller.GetManager().CodeInspectionService)
+	//安全配置
+	r.Put("/inspection", controller.GetManager().InspectionService)
+	r.Delete("/inspection", controller.GetManager().InspectionService)
 	//构建版本列表
 	r.Get("/build-list", controller.GetManager().BuildList)
 	r.Get("/file-manage", controller.GetManager().FileManageService)

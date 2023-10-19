@@ -145,13 +145,14 @@ func (s *slugBuild) buildRunnerImage(slugPackage string) (string, error) {
 		return "", fmt.Errorf("pull image %s: %v", builder.RUNNERIMAGENAME, err)
 	}
 	logrus.Infof("pull image %s successfully.", builder.RUNNERIMAGENAME)
-	codeInspectSwitch := false
-	codeInspect, err := db.GetManager().TenantServiceCodeInspectionDao().GetTenantServiceCodeInspection(s.re.ServiceID)
+	codeInspectOpen := false
+
+	Inspect, err := db.GetManager().TenantServiceInspectionDao().GetTenantServiceInspection(s.re.ServiceID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return "", fmt.Errorf("get tenant service code inspection filure: %v", err)
 	}
-	if codeInspect != nil {
-		codeInspectSwitch = codeInspect.Switch
+	if Inspect != nil {
+		codeInspectOpen = Inspect.CodeOpen
 	}
 	err = sources.ImageBuild(
 		s.re.RepositoryURL,
@@ -169,7 +170,7 @@ func (s *slugBuild) buildRunnerImage(slugPackage string) (string, error) {
 		s.re.BuildKitArgs,
 		s.re.BuildKitCache,
 		s.re.KubeClient,
-		codeInspectSwitch,
+		codeInspectOpen,
 	)
 	if err != nil {
 		s.re.Logger.Error(fmt.Sprintf("build image %s of new version failure", imageName), map[string]string{"step": "builder-exector", "status": "failure"})
@@ -571,7 +572,7 @@ func (s *slugBuild) setImagePullSecretsForPod(pod *corev1.Pod) {
 	}
 }
 
-//ErrorBuild build error
+// ErrorBuild build error
 type ErrorBuild struct {
 	Code int
 }

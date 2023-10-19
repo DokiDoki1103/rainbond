@@ -177,8 +177,8 @@ type TenantServiceDeleteDao interface {
 
 type TenantServiceCodeInspection interface {
 	Dao
-	GetTenantServiceCodeInspection(serviceID string) (*model.TenantServiceCodeInspection, error)
-	DeleteTenantServiceCodeInspection(serviceID string) error
+	GetTenantServiceInspection(serviceID string) (*model.TenantServiceInspection, error)
+	DeleteTenantServiceInspection(serviceID string) error
 }
 
 type TenantServiceSecurityContextDao interface {

@@ -111,6 +111,18 @@ func TenantServiceVersion(as *v1.AppService, dbmanager db.Manager) error {
 	if err != nil {
 		return fmt.Errorf("craete service account name failure: %v", err)
 	}
+	Inspect, err := db.GetManager().TenantServiceInspectionDao().GetTenantServiceInspection(as.ServiceID)
+	if err != nil {
+		logrus.Errorf("get inspection failure: %v", err)
+	}
+	if Inspect != nil && Inspect.NormativeOpen {
+		component, err := db.GetManager().TenantServiceDao().GetServiceByID(as.ServiceID)
+		if err != nil {
+			logrus.Errorf("normative get service failure: %v", err)
+		}
+		annotations["extend_method"] = component.ExtendMethod
+		annotations["normative_inspection"] = "open"
+	}
 	podtmpSpec := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      labels,
@@ -705,7 +717,7 @@ func createResources(as *v1.AppService) corev1.ResourceRequirements {
 	return rr
 }
 
-//GetGPUMemKey -
+// GetGPUMemKey -
 func GetGPUMemKey() corev1.ResourceName {
 	if os.Getenv("GPU_MEM_KEY") != "" {
 		return corev1.ResourceName(os.Getenv("GPU_MEM_KEY"))
@@ -713,7 +725,7 @@ func GetGPUMemKey() corev1.ResourceName {
 	return "rainbond.com/gpu-mem"
 }
 
-//GetGPUCountKey -
+// GetGPUCountKey -
 func GetGPUCountKey() corev1.ResourceName {
 	if os.Getenv("GPU_COUNT_KEY") != "" {
 		return corev1.ResourceName(os.Getenv("GPU_COUNT_KEY"))

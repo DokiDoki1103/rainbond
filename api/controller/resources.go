@@ -818,34 +818,54 @@ func (t *TenantStruct) SetLanguage(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func (t *TenantStruct) CodeInspectionService(w http.ResponseWriter, r *http.Request) {
+func (t *TenantStruct) InspectionService(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "DELETE":
-		t.CloseCodeInspection(w, r)
+		t.CloseInspection(w, r)
 	case "PUT":
-		t.OpenCodeInspection(w, r)
+		t.OpenInspection(w, r)
 	}
 }
 
-// CloseCodeInspection -
-func (t *TenantStruct) CloseCodeInspection(w http.ResponseWriter, r *http.Request) {
+// CloseInspection -
+func (t *TenantStruct) CloseInspection(w http.ResponseWriter, r *http.Request) {
 	serviceID := r.Context().Value(ctxutil.ContextKey("service_id")).(string)
-	err := handler.GetServiceManager().CloseServiceCodeInspection(serviceID)
-	if err != nil {
-		httputil.ReturnError(r, w, 500, fmt.Sprintf("close service code inspection failure: %v", err))
-		return
+	inspectionType := r.FormValue("inspection_type")
+	switch inspectionType {
+	case "code":
+		err := handler.GetServiceManager().CloseServiceCodeInspection(serviceID)
+		if err != nil {
+			httputil.ReturnError(r, w, 500, fmt.Sprintf("close service code inspection failure: %v", err))
+			return
+		}
+	case "normative":
+		err := handler.GetServiceManager().CloseServiceNormativeInspection(serviceID)
+		if err != nil {
+			httputil.ReturnError(r, w, 500, fmt.Sprintf("close service normative inspection failure: %v", err))
+			return
+		}
 	}
 	httputil.ReturnSuccess(r, w, "删除成功")
 	return
 }
 
-// OpenCodeInspection -
-func (t *TenantStruct) OpenCodeInspection(w http.ResponseWriter, r *http.Request) {
+// OpenInspection -
+func (t *TenantStruct) OpenInspection(w http.ResponseWriter, r *http.Request) {
 	serviceID := r.Context().Value(ctxutil.ContextKey("service_id")).(string)
-	err := handler.GetServiceManager().OpenServiceCodeInspection(serviceID)
-	if err != nil {
-		httputil.ReturnError(r, w, 500, fmt.Sprintf("open service code inspection failure: %v", err))
-		return
+	inspectionType := r.FormValue("inspection_type")
+	switch inspectionType {
+	case "code":
+		err := handler.GetServiceManager().OpenServiceCodeInspection(serviceID)
+		if err != nil {
+			httputil.ReturnError(r, w, 500, fmt.Sprintf("open service code inspection failure: %v", err))
+			return
+		}
+	case "normative":
+		err := handler.GetServiceManager().OpenServiceNormativeInspection(serviceID)
+		if err != nil {
+			httputil.ReturnError(r, w, 500, fmt.Sprintf("open service normative inspection failure: %v", err))
+			return
+		}
 	}
 	httputil.ReturnSuccess(r, w, "修改成功")
 	return

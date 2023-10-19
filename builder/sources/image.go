@@ -391,7 +391,7 @@ func EncodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
 	return base64.URLEncoding.EncodeToString(buf), nil
 }
 
-//ImageBuild use buildkit build image
+// ImageBuild use buildkit build image
 func ImageBuild(
 	repositoryURL, arch, contextDir, cachePVCName, cacheMode, RbdNamespace, ServiceID, DeployVersion string,
 	logger event.Logger,
@@ -400,7 +400,7 @@ func ImageBuild(
 	BuildKitArgs []string,
 	BuildKitCache bool,
 	kubeClient kubernetes.Interface,
-	codeInspectSwitch bool,
+	codeInspectOpen bool,
 ) error {
 	// create image name
 	var buildImageName string
@@ -431,12 +431,14 @@ func ImageBuild(
 			},
 		},
 	}
-	if codeInspectSwitch {
-		ann := make(map[string]string)
+	ann := make(map[string]string)
+	if codeInspectOpen {
 		ann["repository_url"] = repositoryURL
 		ann["code_inspection"] = "open"
-		job.Annotations = ann
 	}
+
+	job.Annotations = ann
+
 	podSpec := corev1.PodSpec{
 		RestartPolicy: corev1.RestartPolicyOnFailure,
 		Affinity: &corev1.Affinity{
@@ -797,7 +799,7 @@ func CreateImageName(ServiceID, DeployVersion string) string {
 	return strings.ToLower(fmt.Sprintf("%s/%s:%s", builder.REGISTRYDOMAIN, workloadName, DeployVersion))
 }
 
-//GetImageFirstPart -
+// GetImageFirstPart -
 func GetImageFirstPart(str string) (string, string) {
 	imageDomain, imageName := str, ""
 	if strings.Contains(str, "/") {
@@ -809,7 +811,7 @@ func GetImageFirstPart(str string) (string, string) {
 	return imageDomain, imageName
 }
 
-//PrepareBuildKitTomlCM -
+// PrepareBuildKitTomlCM -
 func PrepareBuildKitTomlCM(ctx context.Context, kubeClient kubernetes.Interface, namespace, buildKitTomlCMName, imageDomain string) error {
 	buildKitTomlCM, err := kubeClient.CoreV1().ConfigMaps(namespace).Get(ctx, buildKitTomlCMName, metav1.GetOptions{})
 	if err != nil && !k8serror.IsNotFound(err) {

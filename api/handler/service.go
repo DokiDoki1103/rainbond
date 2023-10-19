@@ -1208,32 +1208,59 @@ func (s *ServiceAction) ServiceDepend(action string, ds *api_model.DependService
 	return nil
 }
 
-// OpenServiceCodeInspection -
-func (s *ServiceAction) OpenServiceCodeInspection(serviceID string) error {
-	ci, dbErr := db.GetManager().TenantServiceCodeInspectionDao().GetTenantServiceCodeInspection(serviceID)
+func (s *ServiceAction) OpenServiceNormativeInspection(serviceID string) error {
+	ci, dbErr := db.GetManager().TenantServiceInspectionDao().GetTenantServiceInspection(serviceID)
 	if dbErr != nil {
 		if errors.Is(dbErr, gorm.ErrRecordNotFound) {
-			codeInspect := dbmodel.TenantServiceCodeInspection{
-				ServiceID: serviceID,
-				Switch:    true,
+			codeInspect := dbmodel.TenantServiceInspection{
+				ServiceID:     serviceID,
+				NormativeOpen: true,
 			}
-			return db.GetManager().TenantServiceCodeInspectionDao().AddModel(&codeInspect)
+			return db.GetManager().TenantServiceInspectionDao().AddModel(&codeInspect)
 		} else {
 			return dbErr
 		}
 	}
-	ci.Switch = true
-	return db.GetManager().TenantServiceCodeInspectionDao().UpdateModel(ci)
+	ci.NormativeOpen = true
+	return db.GetManager().TenantServiceInspectionDao().UpdateModel(ci)
+}
+
+// CloseServiceNormativeInspection -
+func (s *ServiceAction) CloseServiceNormativeInspection(seviceID string) error {
+	ci, err := db.GetManager().TenantServiceInspectionDao().GetTenantServiceInspection(seviceID)
+	if err != nil {
+		return err
+	}
+	ci.NormativeOpen = false
+	return db.GetManager().TenantServiceInspectionDao().UpdateModel(ci)
+}
+
+// OpenServiceCodeInspection -
+func (s *ServiceAction) OpenServiceCodeInspection(serviceID string) error {
+	ci, dbErr := db.GetManager().TenantServiceInspectionDao().GetTenantServiceInspection(serviceID)
+	if dbErr != nil {
+		if errors.Is(dbErr, gorm.ErrRecordNotFound) {
+			codeInspect := dbmodel.TenantServiceInspection{
+				ServiceID: serviceID,
+				CodeOpen:  true,
+			}
+			return db.GetManager().TenantServiceInspectionDao().AddModel(&codeInspect)
+		} else {
+			return dbErr
+		}
+	}
+	ci.CodeOpen = true
+	return db.GetManager().TenantServiceInspectionDao().UpdateModel(ci)
 }
 
 // CloseServiceCodeInspection -
 func (s *ServiceAction) CloseServiceCodeInspection(seviceID string) error {
-	ci, err := db.GetManager().TenantServiceCodeInspectionDao().GetTenantServiceCodeInspection(seviceID)
+	ci, err := db.GetManager().TenantServiceInspectionDao().GetTenantServiceInspection(seviceID)
 	if err != nil {
 		return err
 	}
-	ci.Switch = false
-	return db.GetManager().TenantServiceCodeInspectionDao().UpdateModel(ci)
+	ci.CodeOpen = false
+	return db.GetManager().TenantServiceInspectionDao().UpdateModel(ci)
 }
 
 // CloseServiceSecurityContext -
@@ -2361,7 +2388,7 @@ func (s *ServiceAction) deleteComponent(tx *gorm.DB, service *dbmodel.TenantServ
 		db.GetManager().ThirdPartySvcDiscoveryCfgDaoTransactions(tx).DeleteByServiceID,
 		db.GetManager().TenantServiceLabelDaoTransactions(tx).DeleteLabelByServiceID,
 		db.GetManager().TenantServicesSecurityContextDaoTransactions(tx).DeleteTenantServiceSecurityContext,
-		db.GetManager().TenantServiceCodeInspectionDaoTransactions(tx).DeleteTenantServiceCodeInspection,
+		db.GetManager().TenantServiceInspectionDaoTransactions(tx).DeleteTenantServiceInspection,
 		db.GetManager().VersionInfoDaoTransactions(tx).DeleteVersionByServiceID,
 		db.GetManager().TenantPluginVersionENVDaoTransactions(tx).DeleteEnvByServiceID,
 		db.GetManager().ServiceProbeDaoTransactions(tx).DELServiceProbesByServiceID,
