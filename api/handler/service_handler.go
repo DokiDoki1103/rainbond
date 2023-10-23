@@ -51,6 +51,8 @@ type ServiceHandler interface {
 	CodeCheck(c *api_model.CheckCodeStruct) error
 	ServiceDepend(action string, ds *api_model.DependService) error
 	EnvAttr(action string, at *dbmodel.TenantServiceEnvVar) error
+	OpenServiceNormativeInspection(serviceID string) error
+	CloseServiceNormativeInspection(seviceID string) error
 	OpenServiceCodeInspection(serviceID string) error
 	CloseServiceCodeInspection(seviceID string) error
 	CloseServiceSecurityContext(seviceID string) error

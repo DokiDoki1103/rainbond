@@ -30,7 +30,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//Manager db manager
+// Manager db manager
 type Manager interface {
 	CloseManager() error
 	Begin() *gorm.DB
@@ -58,8 +58,8 @@ type Manager interface {
 	TenantServiceDeleteDao() dao.TenantServiceDeleteDao
 	TenantServiceDaoTransactions(db *gorm.DB) dao.TenantServiceDao
 	TenantServiceDeleteDaoTransactions(db *gorm.DB) dao.TenantServiceDeleteDao
-	TenantServiceCodeInspectionDao() dao.TenantServiceCodeInspection
-	TenantServiceCodeInspectionDaoTransactions(db *gorm.DB) dao.TenantServiceCodeInspection
+	TenantServiceInspectionDao() dao.TenantServiceCodeInspection
+	TenantServiceInspectionDaoTransactions(db *gorm.DB) dao.TenantServiceCodeInspection
 	TenantServicesSecurityContextDao() dao.TenantServiceSecurityContextDao
 	TenantServicesSecurityContextDaoTransactions(db *gorm.DB) dao.TenantServiceSecurityContextDao
 	TenantServicesPortDao() dao.TenantServicesPortDao
@@ -163,7 +163,7 @@ func init() {
 	}
 }
 
-//CreateManager 创建manager
+// CreateManager 创建manager
 func CreateManager(config config.Config) (err error) {
 	if _, ok := supportDrivers[config.DBType]; !ok {
 		return fmt.Errorf("DB drivers: %s not supported", config.DBType)
@@ -183,7 +183,7 @@ func CreateManager(config config.Config) (err error) {
 	return
 }
 
-//CloseManager close db manager
+// CloseManager close db manager
 func CloseManager() error {
 	if defaultManager == nil {
 		return errors.New("default db manager not init")
@@ -191,7 +191,7 @@ func CloseManager() error {
 	return defaultManager.CloseManager()
 }
 
-//GetManager get db manager
+// GetManager get db manager
 func GetManager() Manager {
 	return defaultManager
 }
