@@ -25,6 +25,8 @@ const (
 	GovernanceModeKubernetesNativeService = "KUBERNETES_NATIVE_SERVICE"
 	// GovernanceModeIstioServiceMesh means the governance mode is ISTIO_SERVICE_MESH
 	GovernanceModeIstioServiceMesh = "ISTIO_SERVICE_MESH"
+	// GovernanceModeSpringCloudServiceMesh means the governance mode is GovernanceModeSpringCloudServiceMesh
+	GovernanceModeSpringCloudServiceMesh = "spring-cloud"
 )
 
 const (
