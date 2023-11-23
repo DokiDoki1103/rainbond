@@ -107,7 +107,7 @@ func (e *exectorManager) runD(t *model.BuildPluginTaskBody, logger event.Logger)
 	logger.Info("start build image", map[string]string{"step": "builder-exector"})
 	err := sources.ImageBuild(
 		t.GitURL,
-		"",
+		"amd64",
 		sourceDir,
 		"",
 		"",
