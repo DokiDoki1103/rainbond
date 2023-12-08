@@ -430,11 +430,6 @@ func (g *GatewayAction) CreateOuterPortGatewayHTTPRoute(req *apimodel.OldOuterPo
 		ErrorOverview: "创建成功",
 		State:         apimodel.CreateSuccess,
 	}}
-	err = db.GetManager().K8sResourceDao().CreateK8sResource(k8sresource)
-	if err != nil {
-		logrus.Errorf("database operation gateway http route create k8s resource failure: %v", err)
-		return nil, err
-	}
 	return k8sresource[0], nil
 }
 
@@ -531,11 +526,6 @@ func (g *GatewayAction) AddGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStruct
 		ErrorOverview: "创建成功",
 		State:         apimodel.CreateSuccess,
 	}}
-	err = db.GetManager().K8sResourceDao().CreateK8sResource(k8sresource)
-	if err != nil {
-		logrus.Errorf("database operation gateway http route create k8s resource failure: %v", err)
-		return nil, err
-	}
 	return k8sresource[0], nil
 }
 
@@ -750,31 +740,10 @@ func (g *GatewayAction) UpdateGatewayHTTPRoute(req *apimodel.GatewayHTTPRouteStr
 	}
 	newHTTPRoute.Kind = apimodel.HTTPRoute
 	newHTTPRoute.APIVersion = apimodel.APIVersionHTTPRoute
-	httpRouteYaml, err := ObjectToJSONORYaml("yaml", &newHTTPRoute)
-	if err != nil {
-		logrus.Errorf("update gateway http route object to yaml failure: %v", err)
-		return nil, err
-	}
-	res, err := db.GetManager().K8sResourceDao().GetK8sResourceByName(req.AppID, req.Name, apimodel.HTTPRoute)
-	if err != nil && !gorm.IsRecordNotFoundError(err) {
-		return nil, err
-	}
-
-	res.ErrorOverview = "更新成功"
-	res.Content = httpRouteYaml
-	res.State = apimodel.UpdateSuccess
-	if gorm.IsRecordNotFoundError(err) {
-		res.AppID = req.AppID
-		res.Name = req.Name
-		res.Kind = apimodel.HTTPRoute
-		err = db.GetManager().K8sResourceDao().CreateK8sResource([]*model.K8sResource{&res})
-	} else {
-		err = db.GetManager().K8sResourceDao().UpdateModel(&res)
-	}
-	if err != nil {
-		logrus.Errorf("database operation gateway http route update k8s resource failure: %v", err)
-		return nil, err
-	}
+	var res model.K8sResource
+	res.AppID = req.AppID
+	res.Name = req.Name
+	res.Kind = apimodel.HTTPRoute
 	return &res, nil
 }
 
@@ -783,11 +752,6 @@ func (g *GatewayAction) DeleteGatewayHTTPRoute(name, namespace, appID string) er
 	err := g.gatewayClient.HTTPRoutes(namespace).Delete(context.Background(), name, metav1.DeleteOptions{})
 	if err != nil && !k8serror.IsNotFound(err) {
 		logrus.Errorf("delete gateway http route failure: %v", err)
-		return err
-	}
-	err = db.GetManager().K8sResourceDao().DeleteK8sResource(appID, name, apimodel.HTTPRoute)
-	if err != nil {
-		logrus.Errorf("database operation gateway http route delete k8s resource failure: %v", err)
 		return err
 	}
 	return nil

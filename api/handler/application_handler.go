@@ -358,32 +358,6 @@ func (a *ApplicationAction) handleDBK8sResource(app *dbmodel.Application, obj *u
 	if err != nil {
 		logrus.Warningf("marshal service mesh cr error: %v", err)
 	}
-	resource := &dbmodel.K8sResource{
-		AppID:   app.AppID,
-		Name:    app.K8sApp,
-		State:   model.CreateSuccess,
-		Content: string(contentBytes),
-	}
-	switch action {
-	case "create":
-		resource.Kind = obj.GetKind()
-		if err := db.GetManager().K8sResourceDao().AddModel(resource); err != nil {
-			return "", err
-		}
-	case "update":
-		old, err := db.GetManager().K8sResourceDao().GetK8sResourceByName(app.AppID, app.K8sApp, obj.GetKind())
-		if err != nil {
-			return "", err
-		}
-		old.Content = string(contentBytes)
-		if err := db.GetManager().K8sResourceDao().UpdateModel(&old); err != nil {
-			return "", err
-		}
-	case "delete":
-		if err := db.GetManager().K8sResourceDao().DeleteK8sResource(app.AppID, app.K8sApp, kind); err != nil {
-			return "", err
-		}
-	}
 	return string(contentBytes), nil
 }
 

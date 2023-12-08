@@ -78,19 +78,10 @@ func (a *ApplicationAction) UpdateAppPeerAuthentications(ctx context.Context, pa
 			ErrorOverview: "创建成功",
 			State:         model.CreateSuccess,
 		}}
-		err = db.GetManager().K8sResourceDao().CreateK8sResource(k8sResource)
-		if err != nil {
-			logrus.Errorf("database operation app PeerAuthentication create k8s resource failure: %v", err)
-			return nil, err
-		}
 		return k8sResource[0], nil
 	}
 	err = ic.SecurityV1beta1().PeerAuthentications(pa.Namespace).Delete(ctx, pa.Name, metav1.DeleteOptions{})
 	if err != nil {
-		return nil, err
-	}
-	err = db.GetManager().K8sResourceDao().DeleteK8sResource(pa.AppID, pa.Name, model.PeerAuthenticationKind)
-	if err != nil && !k8serror.IsNotFound(err) {
 		return nil, err
 	}
 	return nil, nil
@@ -128,20 +119,11 @@ func (a *ApplicationAction) UpdateAppAuthorizationPolicy(ctx context.Context, ap
 		//create AuthorizationPolicy
 		apResource, err := a.createAuthorizationPolicies(ic, ctx, ap)
 		k8sResource = append(k8sResource, apResource...)
-		err = db.GetManager().K8sResourceDao().CreateK8sResource(k8sResource)
-		if err != nil {
-			logrus.Errorf("database operation app AuthorizationPolicy create k8s resource failure: %v", err)
-			return nil, err
-		}
 		return k8sResource, nil
 	}
 	//delete
 	err = ic.SecurityV1().AuthorizationPolicies(ap.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: "app_id=" + ap.AppID})
 	if err != nil {
-		return nil, err
-	}
-	err = db.GetManager().K8sResourceDao().DeleteK8sResourceByKind(ap.AppID, model.AuthorizationPolicyKind)
-	if err != nil && !k8serror.IsNotFound(err) {
 		return nil, err
 	}
 	return nil, nil

@@ -19,13 +19,9 @@
 package controller
 
 import (
-	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/goodrain/rainbond/api/handler"
 	"github.com/goodrain/rainbond/api/model"
-	"github.com/goodrain/rainbond/api/util"
-	"github.com/goodrain/rainbond/db"
-	dbmodel "github.com/goodrain/rainbond/db/model"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
@@ -49,12 +45,12 @@ func (t *ClusterController) GetClusterInfo(w http.ResponseWriter, r *http.Reques
 	httputil.ReturnSuccess(r, w, nodes)
 }
 
-//MavenSettingList maven setting list
+// MavenSettingList maven setting list
 func (t *ClusterController) MavenSettingList(w http.ResponseWriter, r *http.Request) {
 	httputil.ReturnSuccess(r, w, handler.GetClusterHandler().MavenSettingList(r.Context()))
 }
 
-//MavenSettingAdd maven setting add
+// MavenSettingAdd maven setting add
 func (t *ClusterController) MavenSettingAdd(w http.ResponseWriter, r *http.Request) {
 	var set handler.MavenSetting
 	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &set, nil); !ok {
@@ -67,7 +63,7 @@ func (t *ClusterController) MavenSettingAdd(w http.ResponseWriter, r *http.Reque
 	httputil.ReturnSuccess(r, w, &set)
 }
 
-//MavenSettingUpdate maven setting file update
+// MavenSettingUpdate maven setting file update
 func (t *ClusterController) MavenSettingUpdate(w http.ResponseWriter, r *http.Request) {
 	type SettingUpdate struct {
 		Content string `json:"content" validate:"required"`
@@ -87,7 +83,7 @@ func (t *ClusterController) MavenSettingUpdate(w http.ResponseWriter, r *http.Re
 	httputil.ReturnSuccess(r, w, set)
 }
 
-//MavenSettingDelete maven setting file delete
+// MavenSettingDelete maven setting file delete
 func (t *ClusterController) MavenSettingDelete(w http.ResponseWriter, r *http.Request) {
 	err := handler.GetClusterHandler().MavenSettingDelete(r.Context(), chi.URLParam(r, "name"))
 	if err != nil {
@@ -97,7 +93,7 @@ func (t *ClusterController) MavenSettingDelete(w http.ResponseWriter, r *http.Re
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-//MavenSettingDetail maven setting file delete
+// MavenSettingDetail maven setting file delete
 func (t *ClusterController) MavenSettingDetail(w http.ResponseWriter, r *http.Request) {
 	c, err := handler.GetClusterHandler().MavenSettingDetail(r.Context(), chi.URLParam(r, "name"))
 	if err != nil {
@@ -117,7 +113,7 @@ func (t *ClusterController) GetExceptionNodeInfo(w http.ResponseWriter, r *http.
 	httputil.ReturnSuccess(r, w, nodes)
 }
 
-//BatchGetGateway batch get resource gateway
+// BatchGetGateway batch get resource gateway
 func (t *ClusterController) BatchGetGateway(w http.ResponseWriter, r *http.Request) {
 	ns, err := handler.GetClusterHandler().BatchGetGateway(r.Context())
 	if err != nil {
@@ -128,7 +124,7 @@ func (t *ClusterController) BatchGetGateway(w http.ResponseWriter, r *http.Reque
 	httputil.ReturnSuccess(r, w, ns)
 }
 
-//GetNamespace Get the unconnected namespaces under the current cluster
+// GetNamespace Get the unconnected namespaces under the current cluster
 func (t *ClusterController) GetNamespace(w http.ResponseWriter, r *http.Request) {
 	content := r.FormValue("content")
 	ns, err := handler.GetClusterHandler().GetNamespace(r.Context(), content)
@@ -139,7 +135,7 @@ func (t *ClusterController) GetNamespace(w http.ResponseWriter, r *http.Request)
 	httputil.ReturnSuccess(r, w, ns)
 }
 
-//GetNamespaceResource Get all resources in the current namespace
+// GetNamespaceResource Get all resources in the current namespace
 func (t *ClusterController) GetNamespaceResource(w http.ResponseWriter, r *http.Request) {
 	content := r.FormValue("content")
 	namespace := r.FormValue("namespace")
@@ -151,7 +147,7 @@ func (t *ClusterController) GetNamespaceResource(w http.ResponseWriter, r *http.
 	httputil.ReturnSuccess(r, w, rs)
 }
 
-//ConvertResource Get the resources under the current namespace to the rainbond platform
+// ConvertResource Get the resources under the current namespace to the rainbond platform
 func (t *ClusterController) ConvertResource(w http.ResponseWriter, r *http.Request) {
 	content := r.FormValue("content")
 	namespace := r.FormValue("namespace")
@@ -168,7 +164,7 @@ func (t *ClusterController) ConvertResource(w http.ResponseWriter, r *http.Reque
 	httputil.ReturnSuccess(r, w, appsServices)
 }
 
-//ResourceImport Import the converted k8s resources into recognition
+// ResourceImport Import the converted k8s resources into recognition
 func (t *ClusterController) ResourceImport(w http.ResponseWriter, r *http.Request) {
 	content := r.FormValue("content")
 	namespace := r.FormValue("namespace")
@@ -191,7 +187,7 @@ func (t *ClusterController) ResourceImport(w http.ResponseWriter, r *http.Reques
 	httputil.ReturnSuccess(r, w, rri)
 }
 
-//GetResource -
+// GetResource -
 func (t *ClusterController) GetResource(w http.ResponseWriter, r *http.Request) {
 	var hr model.HandleResource
 	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &hr, nil); !ok {
@@ -205,7 +201,7 @@ func (t *ClusterController) GetResource(w http.ResponseWriter, r *http.Request) 
 	httputil.ReturnSuccess(r, w, rri)
 }
 
-//AddResource -
+// AddResource -
 func (t *ClusterController) AddResource(w http.ResponseWriter, r *http.Request) {
 	var hr model.AddHandleResource
 	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &hr, nil); !ok {
@@ -219,7 +215,7 @@ func (t *ClusterController) AddResource(w http.ResponseWriter, r *http.Request) 
 	httputil.ReturnSuccess(r, w, rri)
 }
 
-//UpdateResource -
+// UpdateResource -
 func (t *ClusterController) UpdateResource(w http.ResponseWriter, r *http.Request) {
 	var hr model.HandleResource
 	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &hr, nil); !ok {
@@ -233,7 +229,7 @@ func (t *ClusterController) UpdateResource(w http.ResponseWriter, r *http.Reques
 	httputil.ReturnSuccess(r, w, rri)
 }
 
-//DeleteResource -
+// DeleteResource -
 func (t *ClusterController) DeleteResource(w http.ResponseWriter, r *http.Request) {
 	var hr model.HandleResource
 	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &hr, nil); !ok {
@@ -242,56 +238,11 @@ func (t *ClusterController) DeleteResource(w http.ResponseWriter, r *http.Reques
 	if hr.State == model.CreateSuccess || hr.State == model.UpdateSuccess {
 		handler.GetClusterHandler().DeleteAppK8SResource(r.Context(), hr.Namespace, hr.AppID, hr.Name, hr.ResourceYaml, hr.Kind)
 	}
-	err := db.GetManager().K8sResourceDao().DeleteK8sResource(hr.AppID, hr.Name, hr.Kind)
-	if err != nil {
-		e := &util.APIHandleError{Code: 400, Err: fmt.Errorf("delete app k8s resource failure: %v", err)}
-		e.Handle(r, w)
-		return
-	}
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-//BatchDeleteResource -
+// BatchDeleteResource -
 func (c *ClusterController) BatchDeleteResource(w http.ResponseWriter, r *http.Request) {
-	var req model.SyncResources
-	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &req, nil); !ok {
-		return
-	}
-	k8sResources, err := db.GetManager().K8sResourceDao().ListByAppID(req.AppID)
-	if err != nil {
-		e := &util.APIHandleError{Code: 400, Err: fmt.Errorf("get k8s resource failure: %v", err)}
-		e.Handle(r, w)
-		return
-	}
-	resourceMap := make(map[string][]dbmodel.K8sResource)
-	for _, resource := range k8sResources {
-		resourceList, ok := resourceMap[resource.Name]
-		if ok {
-			resourceMap[resource.Name] = append(resourceList, resource)
-			continue
-		}
-		resourceMap[resource.Name] = []dbmodel.K8sResource{resource}
-	}
-	var deleteResourcesID []uint
-	for _, hr := range req.K8sResources {
-		if hr.State == model.CreateSuccess || hr.State == model.UpdateSuccess {
-			handler.GetClusterHandler().DeleteAppK8SResource(r.Context(), hr.Namespace, hr.AppID, hr.Name, hr.ResourceYaml, hr.Kind)
-			nameResource, ok := resourceMap[hr.Name]
-			if ok {
-				for _, dbResource := range nameResource {
-					if dbResource.Kind == hr.Kind {
-						deleteResourcesID = append(deleteResourcesID, dbResource.ID)
-					}
-				}
-			}
-		}
-	}
-	err = db.GetManager().K8sResourceDao().DeleteK8sResourceByIDs(deleteResourcesID)
-	if err != nil {
-		e := &util.APIHandleError{Code: 400, Err: fmt.Errorf("delete app k8s resource failure: %v", err)}
-		e.Handle(r, w)
-		return
-	}
 	httputil.ReturnSuccess(r, w, nil)
 }
 
@@ -309,7 +260,7 @@ func (t *ClusterController) SyncResource(w http.ResponseWriter, r *http.Request)
 	httputil.ReturnSuccess(r, w, resources)
 }
 
-//YamlResourceName -
+// YamlResourceName -
 func (t *ClusterController) YamlResourceName(w http.ResponseWriter, r *http.Request) {
 	var yr model.YamlResource
 	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &yr, nil); !ok {
@@ -323,7 +274,7 @@ func (t *ClusterController) YamlResourceName(w http.ResponseWriter, r *http.Requ
 	httputil.ReturnSuccess(r, w, h)
 }
 
-//YamlResourceDetailed -
+// YamlResourceDetailed -
 func (t *ClusterController) YamlResourceDetailed(w http.ResponseWriter, r *http.Request) {
 	var yr model.YamlResource
 	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &yr, nil); !ok {
@@ -337,7 +288,7 @@ func (t *ClusterController) YamlResourceDetailed(w http.ResponseWriter, r *http.
 	httputil.ReturnSuccess(r, w, h)
 }
 
-//YamlResourceImport -
+// YamlResourceImport -
 func (t *ClusterController) YamlResourceImport(w http.ResponseWriter, r *http.Request) {
 	var yr model.YamlResource
 	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &yr, nil); !ok {
