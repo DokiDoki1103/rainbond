@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-//ResourceImport Import the converted k8s resources into recognition
+// ResourceImport Import the converted k8s resources into recognition
 func (c *clusterAction) ResourceImport(namespace string, as map[string]model.ApplicationResource, eid string) (*model.ReturnResourceImport, *util.APIHandleError) {
 	logrus.Infof("ResourceImport function begin")
 	var returnResourceImport model.ReturnResourceImport
@@ -148,8 +148,7 @@ func (c *clusterAction) CreateK8sResource(k8sResources []dbmodel.K8sResource, Ap
 		kr := k8sResource
 		k8sResourceList = append(k8sResourceList, &kr)
 	}
-	err := db.GetManager().K8sResourceDao().CreateK8sResource(k8sResourceList)
-	return k8sResources, err
+	return k8sResources, nil
 }
 
 func (c *clusterAction) CreateComponent(app *dbmodel.Application, tenantID string, component model.ConvertResource, namespace string, isYaml bool, existComponents []*dbmodel.TenantServices) (*dbmodel.TenantServices, error) {

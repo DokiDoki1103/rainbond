@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/goodrain/rainbond/api/model"
 	"github.com/goodrain/rainbond/api/util"
-	"github.com/goodrain/rainbond/db"
 	dbmodel "github.com/goodrain/rainbond/db/model"
 	"github.com/goodrain/rainbond/mq/client"
 	"github.com/sirupsen/logrus"
@@ -54,35 +53,31 @@ func (c *clusterAction) AddAppK8SResource(ctx context.Context, namespace string,
 				ErrorOverview: resource.ErrorOverview,
 				State:         resource.State,
 			})
-			err := db.GetManager().K8sResourceDao().CreateK8sResource(resourceList)
-			if err != nil {
-				return nil, &util.APIHandleError{Code: 400, Err: fmt.Errorf("CreateK8sResource %v", err)}
-			}
 		}
 	}
 	return resourceList, nil
 }
 
 func (c *clusterAction) GetAppK8SResource(ctx context.Context, namespace, appID, name, resourceYaml, kind string) (dbmodel.K8sResource, *util.APIHandleError) {
-	rs, err := db.GetManager().K8sResourceDao().GetK8sResourceByName(appID, name, kind)
-	if err != nil {
-		return dbmodel.K8sResource{}, &util.APIHandleError{Code: 400, Err: fmt.Errorf("get k8s resource %v", err)}
-	}
-	resourceObjects := c.HandleResourceYaml([]byte(rs.Content), namespace, "get", name, nil)
-
+	var rs dbmodel.K8sResource
+	resourceObjects := c.HandleResourceYaml([]byte(resourceYaml), namespace, "get", name, nil)
+	rs.Kind = kind
+	rs.AppID = appID
+	rs.Name = name
 	if resourceObjects[0].State != model.GetError {
 		rs.Content, _ = ObjectToJSONORYaml("yaml", resourceObjects[0].Resource)
 	}
 
-	db.GetManager().K8sResourceDao().UpdateModel(&rs)
 	return rs, nil
 }
 
 // UpdateAppK8SResource -
 func (c *clusterAction) UpdateAppK8SResource(ctx context.Context, namespace, appID, name, resourceYaml, kind string) (dbmodel.K8sResource, *util.APIHandleError) {
-	rs, err := db.GetManager().K8sResourceDao().GetK8sResourceByName(appID, name, kind)
-	if err != nil {
-		return dbmodel.K8sResource{}, &util.APIHandleError{Code: 400, Err: fmt.Errorf("get k8s resource %v", err)}
+	rs := dbmodel.K8sResource{
+		AppID:   appID,
+		Name:    name,
+		Kind:    kind,
+		Content: resourceYaml,
 	}
 	resourceObjects := c.HandleResourceYaml([]byte(resourceYaml), namespace, "update", name, map[string]string{"app_id": appID})
 	var rsYaml string
@@ -96,7 +91,6 @@ func (c *clusterAction) UpdateAppK8SResource(ctx context.Context, namespace, app
 		rs.State = resourceObjects[0].State
 		rs.ErrorOverview = resourceObjects[0].ErrorOverview
 		rs.Content = rsYaml
-		db.GetManager().K8sResourceDao().UpdateModel(&rs)
 	}
 	return rs, nil
 }
@@ -140,10 +134,6 @@ func (c *clusterAction) SyncAppK8SResources(ctx context.Context, req *model.Sync
 				State:         resourceObjects[0].State,
 			})
 		}
-	}
-	err := db.GetManager().K8sResourceDao().CreateK8sResource(resourceList)
-	if err != nil {
-		return nil, &util.APIHandleError{Code: 400, Err: fmt.Errorf("SyncK8sResource %v", err)}
 	}
 	return resourceList, nil
 }
