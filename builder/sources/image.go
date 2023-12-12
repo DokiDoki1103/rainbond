@@ -435,9 +435,8 @@ func ImageBuild(
 	if codeInspectOpen {
 		ann["repository_url"] = repositoryURL
 		ann["code_inspection"] = "open"
+		job.Annotations = ann
 	}
-
-	job.Annotations = ann
 
 	podSpec := corev1.PodSpec{
 		RestartPolicy: corev1.RestartPolicyOnFailure,
