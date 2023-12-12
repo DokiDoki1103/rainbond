@@ -39,7 +39,6 @@ type Config struct {
 	MysqlConnectionInfo  string
 	BuildKitImage        string
 	BuildKitArgs         string
-	BuildSharedCache     bool
 	BuildKitCache        bool
 	DBType               string
 	PrometheusMetricPath string
@@ -62,6 +61,8 @@ type Config struct {
 	ContainerRuntime     string
 	RuntimeEndpoint      string
 	KeepCount            int
+	CleanInterval        int
+	BRVersion            string
 }
 
 // Builder  builder server
@@ -109,13 +110,15 @@ func (a *Builder) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&a.ContainerRuntime, "container-runtime", sources.ContainerRuntimeContainerd, "container runtime, support docker and containerd")
 	fs.StringVar(&a.RuntimeEndpoint, "runtime-endpoint", sources.RuntimeEndpointContainerd, "container runtime endpoint")
 	fs.StringVar(&a.BuildKitArgs, "buildkit-args", "", "buildkit build image container args config,need '&' split")
-	fs.BoolVar(&a.BuildKitCache, "buildkit-cache", true, "whether to enable the buildkit image cache")
-	fs.BoolVar(&a.BuildSharedCache, "build-shared-cache", true, "build shared cache")
+	fs.BoolVar(&a.BuildKitCache, "buildkit-cache", false, "whether to enable the buildkit image cache")
 	fs.IntVar(&a.KeepCount, "keep-count", 5, "default number of reserved copies for images")
+	fs.IntVar(&a.CleanInterval, "clean-interval", 60, "clean image interval,default 60 minute")
+	fs.StringVar(&a.BRVersion, "br-version", "v5.16.0-release", "builder and runner version")
 }
 
 // SetLog 设置log
 func (a *Builder) SetLog() {
+
 	level, err := logrus.ParseLevel(a.LogLevel)
 	if err != nil {
 		fmt.Println("set log level error." + err.Error())

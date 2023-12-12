@@ -23,11 +23,11 @@ import (
 	"fmt"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	client "github.com/coreos/etcd/clientv3"
 	"net/http"
 	"strconv"
 	"strings"
 
-	client "github.com/coreos/etcd/clientv3"
 	"github.com/go-chi/chi"
 	"github.com/goodrain/rainbond/cmd/node/option"
 	"github.com/goodrain/rainbond/discover"
@@ -46,7 +46,7 @@ import (
 	_ "net/http/pprof"
 )
 
-//Manager api manager
+// Manager api manager
 type Manager struct {
 	ctx            context.Context
 	cancel         context.CancelFunc
@@ -86,7 +86,7 @@ func NewManager(c option.Conf, node *nodeclient.HostNode, ms *masterserver.Maste
 	return m
 }
 
-//Start 启动
+// Start 启动
 func (m *Manager) Start(errChan chan error) error {
 	logrus.Infof("api server start listening on %s", m.conf.APIAddr)
 	go func() {
@@ -124,7 +124,7 @@ func (m *Manager) Start(errChan chan error) error {
 	return nil
 }
 
-//Stop 停止
+// Stop 停止
 func (m *Manager) Stop() error {
 	logrus.Info("api server is stoping.")
 	m.cancel()
@@ -134,12 +134,12 @@ func (m *Manager) Stop() error {
 	return nil
 }
 
-//GetRouter GetRouter
+// GetRouter GetRouter
 func (m *Manager) GetRouter() *chi.Mux {
 	return m.router
 }
 
-//HandleClusterScrape prometheus handle
+// HandleClusterScrape prometheus handle
 func (m *Manager) HandleClusterScrape(w http.ResponseWriter, r *http.Request) {
 	gatherers := prometheus.Gatherers{
 		prometheus.DefaultGatherer,

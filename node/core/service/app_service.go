@@ -21,6 +21,7 @@ package service
 import (
 	"archive/tar"
 	"fmt"
+	"github.com/coreos/etcd/clientv3"
 	"github.com/goodrain/rainbond/cmd/node/option"
 	"github.com/goodrain/rainbond/discover/config"
 	"github.com/goodrain/rainbond/node/core/store"
@@ -37,11 +38,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coreos/etcd/clientv3"
 	"github.com/sirupsen/logrus"
 )
 
-//AppService app service
+// AppService app service
 type AppService struct {
 	Prefix    string
 	c         *option.Conf
@@ -49,7 +49,7 @@ type AppService struct {
 	config    *rest.Config
 }
 
-//CreateAppService create
+// CreateAppService create
 func CreateAppService(c *option.Conf, clientset *kubernetes.Clientset, config *rest.Config) *AppService {
 	return &AppService{
 		c:         c,
@@ -267,7 +267,7 @@ func getPrefix(file string) string {
 	return strings.TrimLeft(file, "/")
 }
 
-//FindAppEndpoints 获取app endpoint
+// FindAppEndpoints 获取app endpoint
 func (a *AppService) FindAppEndpoints(appName string) []*config.Endpoint {
 	var ends = make(map[string]*config.Endpoint)
 	res, err := store.DefalutClient.Get(fmt.Sprintf("%s/backends/%s/servers", a.Prefix, appName), clientv3.WithPrefix())

@@ -27,6 +27,7 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	betav1 "k8s.io/api/networking/v1beta1"
 	utilversion "k8s.io/apimachinery/pkg/util/version"
+	"kubevirt.io/client-go/kubecli"
 	"os"
 	"sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/typed/apis/v1beta1"
 	"strconv"
@@ -79,7 +80,7 @@ var rc2RecordType = map[string]string{
 	"HorizontalPodAutoscaler": "hpa",
 }
 
-//Storer app runtime store interface
+// Storer app runtime store interface
 type Storer interface {
 	Start() error
 	Ready() bool
@@ -137,8 +138,8 @@ type Event struct {
 	Obj  interface{}
 }
 
-//appRuntimeStore app runtime store
-//cache all kubernetes object and appservice
+// appRuntimeStore app runtime store
+// cache all kubernetes object and appservice
 type appRuntimeStore struct {
 	kubeconfig             *rest.Config
 	clientset              kubernetes.Interface
@@ -164,9 +165,10 @@ type appRuntimeStore struct {
 	volumeTypeListenerLock sync.Mutex
 	resourceCache          *ResourceCache
 	k8sVersion             *utilversion.Version
+	kubevirtCli            kubecli.KubevirtClient
 }
 
-//NewStore new app runtime store
+// NewStore new app runtime store
 func NewStore(
 	kubeconfig *rest.Config,
 	clientset kubernetes.Interface,
@@ -175,7 +177,8 @@ func NewStore(
 	conf option.Config,
 	kruiseClient *kruiseVersioned.Clientset,
 	gatewayClient *v1beta1.GatewayV1beta1Client,
-	k8sVersion *utilversion.Version) Storer {
+	k8sVersion *utilversion.Version,
+	kubevirtCli kubecli.KubevirtClient) Storer {
 	ctx, cancel := context.WithCancel(context.Background())
 	store := &appRuntimeStore{
 		kubeconfig:          kubeconfig,
@@ -195,6 +198,7 @@ func NewStore(
 		kruiseClient:        kruiseClient,
 		gatewayClient:       gatewayClient,
 		k8sVersion:          k8sVersion,
+		kubevirtCli:         kubevirtCli,
 	}
 	crdClient, err := internalclientset.NewForConfig(kubeconfig)
 	if err != nil {
@@ -402,12 +406,12 @@ func (a *appRuntimeStore) Start() error {
 	return nil
 }
 
-//Ready if all kube informers is syncd, store is ready
+// Ready if all kube informers is syncd, store is ready
 func (a *appRuntimeStore) Ready() bool {
 	return a.informers.Ready()
 }
 
-//checkReplicasetWhetherDelete if rs is old version,if it is old version and it always delete all pod.
+// checkReplicasetWhetherDelete if rs is old version,if it is old version and it always delete all pod.
 // will delete it
 func (a *appRuntimeStore) checkReplicasetWhetherDelete(app *v1.AppService, rs *appsv1.ReplicaSet) {
 	current := app.GetCurrentReplicaSet()
@@ -769,7 +773,7 @@ func (a *appRuntimeStore) OnAdd(obj interface{}) {
 	}
 }
 
-//getAppService if  creator is true, will create new app service where not found in store
+// getAppService if  creator is true, will create new app service where not found in store
 func (a *appRuntimeStore) getAppService(serviceID, version, createrID string, creator bool, kruiseClient *kruiseVersioned.Clientset, gatewayClient *v1beta1.GatewayV1beta1Client) (*v1.AppService, error) {
 	var appservice *v1.AppService
 	appservice = a.GetAppService(serviceID)
@@ -842,6 +846,31 @@ func (a *appRuntimeStore) OnDeletes(objs ...interface{}) {
 						a.DeleteAppService(appservice)
 					}
 					return
+				}
+			}
+		}
+		if pod, ok := obj.(*corev1.Pod); ok {
+			if vmName, t := pod.Labels["kubevirt.io/domain"]; t {
+				serviceID := pod.Labels["service_id"]
+				version := pod.Labels["version"]
+				createrID := pod.Labels["creater_id"]
+				if serviceID != "" && version != "" && createrID != "" {
+					appservice, _ := a.getAppService(serviceID, version, createrID, false, a.kruiseClient, a.gatewayClient)
+					if appservice != nil {
+						vm, err := a.kubevirtCli.VirtualMachine(pod.Namespace).Get(context.Background(), vmName, &metav1.GetOptions{})
+						if err != nil && !k8sErrors.IsNotFound(err) {
+							logrus.Errorf("get vm failure: %v", err)
+							return
+						}
+						if !k8sErrors.IsNotFound(err) {
+							appservice.DeleteVirtualMachine(vm)
+							if appservice.IsClosed() {
+								a.DeleteAppService(appservice)
+							}
+							return
+						}
+						return
+					}
 				}
 			}
 		}
@@ -1037,7 +1066,7 @@ func (a *appRuntimeStore) OnDeletes(objs ...interface{}) {
 	}
 }
 
-//RegistAppService regist a app model to store.
+// RegistAppService regist a app model to store.
 func (a *appRuntimeStore) RegistAppService(app *v1.AppService) {
 	a.appServices.Store(v1.GetCacheKeyOnlyServiceID(app.ServiceID), app)
 	a.appCount++
@@ -1052,14 +1081,14 @@ func (a *appRuntimeStore) GetPod(namespace, name string) (*corev1.Pod, error) {
 	return a.listers.Pod.Pods(namespace).Get(name)
 }
 
-//DeleteAppService delete cache app service
+// DeleteAppService delete cache app service
 func (a *appRuntimeStore) DeleteAppService(app *v1.AppService) {
 	//a.appServices.Delete(v1.GetCacheKeyOnlyServiceID(app.ServiceID))
 	//a.appCount--
 	//logrus.Debugf("current have %d app after delete \n", a.appCount)
 }
 
-//DeleteAppServiceByKey delete cache app service
+// DeleteAppServiceByKey delete cache app service
 func (a *appRuntimeStore) DeleteAppServiceByKey(key v1.CacheKey) {
 	a.appServices.Delete(key)
 	a.appCount--
@@ -1098,6 +1127,15 @@ func (a *appRuntimeStore) UpdateGetAppService(serviceID string) *v1.AppService {
 			}
 			if stateful != nil {
 				appService.SetStatefulSet(stateful)
+			}
+		}
+		if vm := appService.GetVirtualMachine(); vm != nil {
+			vm, err := a.kubevirtCli.VirtualMachine(vm.Namespace).Get(context.Background(), vm.Name, &metav1.GetOptions{})
+			if err != nil && k8sErrors.IsNotFound(err) {
+				appService.DeleteVirtualMachine(vm)
+			}
+			if vm != nil {
+				appService.SetVirtualMachine(vm)
 			}
 		}
 		if deployment := appService.GetDeployment(); deployment != nil {
@@ -1392,7 +1430,7 @@ func (a *appRuntimeStore) HandleOperatorManagedStatefulSet(app *v1.OperatorManag
 	return stsList
 }
 
-//ExtractPodData processing pod data
+// ExtractPodData processing pod data
 func ExtractPodData(pods []corev1.Pod, deployName string) (podList []*pb.ManagedPod, images []string) {
 	for index, pod := range pods {
 		if value, ok := pod.Labels["creator"]; ok && value == "rainbond" {
@@ -1604,17 +1642,17 @@ func (a *appRuntimeStore) addAbnormalInfo(ai *v1.AbnormalInfo) {
 	}
 }
 
-//GetTenantResource get tenant resource
+// GetTenantResource get tenant resource
 func (a *appRuntimeStore) GetTenantResource(tenantID string) TenantResource {
 	return a.resourceCache.GetTenantResource(tenantID)
 }
 
-//GetTenantResource get tenant resource
+// GetTenantResource get tenant resource
 func (a *appRuntimeStore) GetTenantResourceList() []TenantResource {
 	return a.resourceCache.GetAllTenantResource()
 }
 
-//GetTenantRunningApp get running app by tenant
+// GetTenantRunningApp get running app by tenant
 func (a *appRuntimeStore) GetTenantRunningApp(tenantID string) (list []*v1.AppService) {
 	a.appServices.Range(func(k, v interface{}) bool {
 		appService, _ := v.(*v1.AppService)
@@ -1638,6 +1676,14 @@ func (a *appRuntimeStore) podEventHandler() cache.ResourceEventHandlerFuncs {
 					a.conf.KubeClient.CoreV1().Pods(pod.Namespace).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
 				}
 				if appservice != nil {
+					if vmName, t := pod.Labels["kubevirt.io/domain"]; t {
+						vm, err := a.kubevirtCli.VirtualMachine(pod.Namespace).Get(context.Background(), vmName, &metav1.GetOptions{})
+						if err != nil {
+							logrus.Errorf("get vm failure: %v", err)
+						}
+						appservice.SetVirtualMachine(vm)
+					}
+
 					appservice.SetPods(pod)
 				}
 			}
@@ -1666,6 +1712,13 @@ func (a *appRuntimeStore) podEventHandler() cache.ResourceEventHandlerFuncs {
 					a.conf.KubeClient.CoreV1().Pods(pod.Namespace).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
 				}
 				if appservice != nil {
+					if vmName, t := pod.Labels["kubevirt.io/domain"]; t {
+						vm, err := a.kubevirtCli.VirtualMachine(pod.Namespace).Get(context.Background(), vmName, &metav1.GetOptions{})
+						if err != nil {
+							logrus.Errorf("get vm failure: %v", err)
+						}
+						appservice.SetVirtualMachine(vm)
+					}
 					appservice.SetPods(pod)
 				}
 			}

@@ -98,6 +98,11 @@ type HelmInterface interface {
 	CheckHelmApp(w http.ResponseWriter, r *http.Request)
 	GetChartInformation(w http.ResponseWriter, r *http.Request)
 	GetYamlByChart(w http.ResponseWriter, r *http.Request)
+	GetUploadChartInformation(w http.ResponseWriter, r *http.Request)
+	CheckUploadChart(w http.ResponseWriter, r *http.Request)
+	GetUploadChartResource(w http.ResponseWriter, r *http.Request)
+	ImportUploadChartResource(w http.ResponseWriter, r *http.Request)
+	GetUploadChartValue(w http.ResponseWriter, r *http.Request)
 }
 
 // ServiceInterface ServiceInterface
@@ -146,12 +151,13 @@ type TenantInterfaceWithV1 interface {
 	HorizontalService(w http.ResponseWriter, r *http.Request)
 	BuildService(w http.ResponseWriter, r *http.Request)
 	FileManageService(w http.ResponseWriter, r *http.Request)
+	PauseService(w http.ResponseWriter, r *http.Request)
+	UNPauseService(w http.ResponseWriter, r *http.Request)
 	DeployService(w http.ResponseWriter, r *http.Request)
 	UpgradeService(w http.ResponseWriter, r *http.Request)
 	StatusService(w http.ResponseWriter, r *http.Request)
 	SecurityContextService(w http.ResponseWriter, r *http.Request)
 	InspectionService(w http.ResponseWriter, r *http.Request)
-	CodeInspectionService(w http.ResponseWriter, r *http.Request)
 	StatusServiceList(w http.ResponseWriter, r *http.Request)
 	StatusContainerID(w http.ResponseWriter, r *http.Request)
 }

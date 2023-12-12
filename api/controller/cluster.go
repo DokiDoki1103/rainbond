@@ -299,7 +299,7 @@ func (t *ClusterController) YamlResourceImport(w http.ResponseWriter, r *http.Re
 		err.Handle(r, w)
 		return
 	}
-	ac, err := handler.GetClusterHandler().AppYamlResourceImport(yr, ar)
+	ac, err := handler.GetClusterHandler().AppYamlResourceImport(yr.Namespace, yr.TenantID, yr.AppID, ar)
 	if err != nil {
 		err.Handle(r, w)
 		return

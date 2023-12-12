@@ -23,7 +23,7 @@ import (
 	"github.com/goodrain/rainbond/api/controller"
 )
 
-//Routes routes
+// Routes routes
 func Routes() chi.Router {
 	r := chi.NewRouter()
 	r.Get("/docker_console", controller.GetDockerConsole().Get)
@@ -35,7 +35,7 @@ func Routes() chi.Router {
 	return r
 }
 
-//LogRoutes 日志下载路由
+// LogRoutes 日志下载路由
 func LogRoutes() chi.Router {
 	r := chi.NewRouter()
 	r.Get("/{gid}/{filename}", controller.GetLogFile().Get)
@@ -43,7 +43,7 @@ func LogRoutes() chi.Router {
 	return r
 }
 
-//AppRoutes 应用导出包下载路由
+// AppRoutes 应用导出包下载路由
 func AppRoutes() chi.Router {
 	r := chi.NewRouter()
 	r.Get("/download/{format}/{fileName}", controller.GetManager().Download)
@@ -52,7 +52,7 @@ func AppRoutes() chi.Router {
 	return r
 }
 
-//PackageBuildRoutes 本地文件上传路由
+// PackageBuildRoutes 本地文件上传路由
 func PackageBuildRoutes() chi.Router {
 	r := chi.NewRouter()
 	r.Post("/component/events/{eventID}", controller.GetManager().UploadPackage)

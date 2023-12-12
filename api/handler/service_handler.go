@@ -38,6 +38,7 @@ type ServiceHandler interface {
 	DeleteLabel(l *api_model.LabelsStruct, serviceID string) error
 	UpdateLabel(l *api_model.LabelsStruct, serviceID string) error
 	StartStopService(s *api_model.StartStopStruct) error
+	PauseUNPauseService(serviceID string, pauseORunpause string) error
 	ServiceVertical(ctx context.Context, v *model.VerticalScalingTaskBody) error
 	ServiceHorizontal(h *model.HorizontalScalingTaskBody) error
 	ServiceUpgrade(r *model.RollingUpgradeTaskBody) error
@@ -84,6 +85,8 @@ type ServiceHandler interface {
 	UpdateVersionEnv(uve *api_model.SetVersionEnv) *util.APIHandleError
 	DeletePluginConfig(serviceID, pluginID string) *util.APIHandleError
 	ServiceCheck(*api_model.ServiceCheckStruct) (string, string, *util.APIHandleError)
+	RegistryImageRepositories(namespace string) ([]string, *util.APIHandleError)
+	RegistryImageTags(repository string) ([]string, *util.APIHandleError)
 	GetServiceCheckInfo(uuid string) (*exector.ServiceCheckResult, *util.APIHandleError)
 	GetServiceDeployInfo(tenantID, serviceID string) (*pb.DeployInfo, *util.APIHandleError)
 	ListVersionInfo(serviceID string) (*api_model.BuildListRespVO, error)
