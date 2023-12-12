@@ -24,6 +24,7 @@ import (
 	api_db "github.com/goodrain/rainbond/api/db"
 	"github.com/goodrain/rainbond/api/handler/group"
 	"github.com/goodrain/rainbond/api/handler/share"
+	"github.com/goodrain/rainbond/builder/sources/registry"
 	"github.com/goodrain/rainbond/cmd/api/option"
 	"github.com/goodrain/rainbond/db"
 	"github.com/goodrain/rainbond/pkg/generated/clientset/versioned"
@@ -36,6 +37,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
+	"kubevirt.io/client-go/kubecli"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	gateway "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/typed/apis/v1beta1"
 )
@@ -53,6 +55,8 @@ func InitHandle(conf option.Config,
 	mapper meta.RESTMapper,
 	dynamicClient dynamic.Interface,
 	gatewayClient *gateway.GatewayV1beta1Client,
+	kubevirtCli kubecli.KubevirtClient,
+	registryCli *registry.Registry,
 	kruiseClient *kruise_versioned.Clientset,
 ) error {
 	mq := api_db.MQManager{
@@ -73,11 +77,11 @@ func InitHandle(conf option.Config,
 	}
 
 	dbmanager := db.GetManager()
-	defaultServieHandler = CreateManager(conf, mqClient, etcdcli, statusCli, prometheusCli, rainbondClient, kubeClient, config)
+	defaultServieHandler = CreateManager(conf, mqClient, etcdcli, statusCli, prometheusCli, rainbondClient, kubeClient, kubevirtCli, dbmanager, registryCli, config)
 	defaultPluginHandler = CreatePluginManager(mqClient)
 	defaultAppHandler = CreateAppManager(mqClient)
 	defaultTenantHandler = CreateTenManager(mqClient, statusCli, &conf, kubeClient, prometheusCli, k8sClient)
-	defaultHelmHandler = CreateHelmManager(kubeClient, rainbondClient)
+	defaultHelmHandler = CreateHelmManager(kubeClient, rainbondClient, config, mapper)
 	defaultNetRulesHandler = CreateNetRulesManager(etcdcli)
 	defaultCloudHandler = CreateCloudManager(conf)
 	defaultAPPBackupHandler = group.CreateBackupHandle(mqClient, statusCli, etcdcli)

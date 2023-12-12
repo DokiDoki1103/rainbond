@@ -24,6 +24,7 @@ import (
 	"github.com/openkruise/kruise-api/client/clientset/versioned"
 	"sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/typed/apis/v1beta1"
 	"github.com/goodrain/rainbond/cmd/worker/option"
+	"kubevirt.io/client-go/kubecli"
 	"sync"
 
 	"github.com/goodrain/rainbond/util"
@@ -34,28 +35,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//Controller service operating controller interface
+// Controller service operating controller interface
 type Controller interface {
 	Begin()
 	Stop() error
 }
 
-//TypeController controller type
+// TypeController controller type
 type TypeController string
 
-//TypeStartController start service type
+// TypeStartController start service type
 var TypeStartController TypeController = "start"
 
-//TypeStopController start service type
+// TypeStopController start service type
 var TypeStopController TypeController = "stop"
 
-//TypeRestartController restart service type
+// TypeRestartController restart service type
 var TypeRestartController TypeController = "restart"
 
-//TypeUpgradeController start service type
+// TypeUpgradeController start service type
 var TypeUpgradeController TypeController = "upgrade"
 
-//TypeScalingController start service type
+// TypeScalingController start service type
 var TypeScalingController TypeController = "scaling"
 
 // TypeApplyRuleController -
@@ -67,7 +68,7 @@ var TypeApplyConfigController TypeController = "apply_config"
 // TypeControllerRefreshHPA -
 var TypeControllerRefreshHPA TypeController = "refreshhpa"
 
-//Manager controller manager
+// Manager controller manager
 type Manager struct {
 	ctx           context.Context
 	cancel        context.CancelFunc
@@ -80,10 +81,11 @@ type Manager struct {
 	kruiseClient  *versioned.Clientset
 	gatewayClient *v1beta1.GatewayV1beta1Client
 	config        option.Config
+	kubevirtCli   kubecli.KubevirtClient
 }
 
 //NewManager new manager
-func NewManager(config option.Config, store store.Storer, client kubernetes.Interface, runtimeClient client.Client, kruiseClient *versioned.Clientset, gatewayClient *v1beta1.GatewayV1beta1Client) *Manager {
+func NewManager(config option.Config, store store.Storer, client kubernetes.Interface, runtimeClient client.Client, kruiseClient *versioned.Clientset, gatewayClient *v1beta1.GatewayV1beta1Client, kubevirtCli kubecli.KubevirtClient) *Manager {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Manager{
 		ctx:           ctx,
@@ -96,23 +98,24 @@ func NewManager(config option.Config, store store.Storer, client kubernetes.Inte
 		kruiseClient:  kruiseClient,
 		gatewayClient: gatewayClient,
 		config:        config,
+		kubevirtCli:   kubevirtCli,
 	}
 }
 
-//Stop stop all controller
+// Stop stop all controller
 func (m *Manager) Stop() error {
 	m.cancel()
 	return nil
 }
 
-//GetControllerSize get running controller number
+// GetControllerSize get running controller number
 func (m *Manager) GetControllerSize() int {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	return len(m.controllers)
 }
 
-//ExportController -
+// ExportController -
 func (m *Manager) ExportController(AppName, AppVersion string, EventIDs []string, end bool, apps ...v1.AppService) error {
 	controllerID := util.NewUUID()
 	controller := &exportController{
@@ -131,7 +134,7 @@ func (m *Manager) ExportController(AppName, AppVersion string, EventIDs []string
 	return nil
 }
 
-//StartController create and start service controller
+// StartController create and start service controller
 func (m *Manager) StartController(controllerType TypeController, apps ...v1.AppService) error {
 	var controller Controller
 	controllerID := util.NewUUID()

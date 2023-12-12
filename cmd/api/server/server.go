@@ -20,13 +20,16 @@ package server
 
 import (
 	"context"
+	rainbondv1alpha1 "github.com/goodrain/rainbond-operator/api/v1alpha1"
 	"github.com/goodrain/rainbond/api/controller"
 	"github.com/goodrain/rainbond/api/db"
 	"github.com/goodrain/rainbond/api/discover"
 	"github.com/goodrain/rainbond/api/handler"
 	"github.com/goodrain/rainbond/api/server"
+	registry "github.com/goodrain/rainbond/builder/sources/registry"
 	"github.com/goodrain/rainbond/cmd/api/option"
 	"github.com/goodrain/rainbond/event"
+	"github.com/goodrain/rainbond/grctl/clients"
 	"github.com/goodrain/rainbond/pkg/generated/clientset/versioned"
 	rainbondscheme "github.com/goodrain/rainbond/pkg/generated/clientset/versioned/scheme"
 	etcdutil "github.com/goodrain/rainbond/util/etcd"
@@ -36,11 +39,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/restmapper"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
+	"kubevirt.io/client-go/kubecli"
 	"os"
 	"os/signal"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,7 +53,7 @@ import (
 	"syscall"
 )
 
-//Run start run
+// Run start run
 func Run(s *option.APIServer) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -140,10 +145,36 @@ func Run(s *option.APIServer) error {
 		return err
 	}
 
+	kubevirtCli, err := kubecli.GetKubevirtClientFromRESTConfig(config)
+	if err != nil {
+		logrus.Errorf("create kubevirt cli failure: %v", err)
+		return err
+	}
+
+	var cluster rainbondv1alpha1.RainbondCluster
+	err = clients.K8SClientInitClient(clientset, config)
+	if err != nil {
+		logrus.Errorf("k8s client init rainbondClient failure: %v", err)
+		return err
+	}
+	if err := clients.RainbondKubeClient.Get(context.Background(), types.NamespacedName{Namespace: "rbd-system", Name: "rainbondcluster"}, &cluster); err != nil {
+		return errors.Wrap(err, "get configuration from rainbond cluster")
+	}
+
+	registryConfig := cluster.Spec.ImageHub
+	if registryConfig.Domain == "goodrain.me" {
+		registryConfig.Domain = "http://rbd-hub:5000"
+	}
+
+	registryCli, err := registry.NewInsecure(registryConfig.Domain, registryConfig.Username, registryConfig.Password)
+	if err != nil {
+		return errors.WithMessage(err, "create registry cleaner")
+	}
+
 	//初始化 middleware
 	handler.InitProxy(s.Config)
 	//创建handle
-	if err := handler.InitHandle(s.Config, etcdClientArgs, cli, etcdcli, clientset, rainbondClient, k8sClient, metricClient, config, mapper, dynamicClient, gatewayClient, kruiseClient); err != nil {
+	if err := handler.InitHandle(s.Config, etcdClientArgs, cli, etcdcli, clientset, rainbondClient, k8sClient, metricClient, config, mapper, dynamicClient, gatewayClient, kubevirtCli, registryCli, kruiseClient); err != nil {
 		logrus.Errorf("init all handle error, %v", err)
 		return err
 	}

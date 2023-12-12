@@ -23,11 +23,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/goodrain/rainbond/builder/sources/registry"
 	"github.com/goodrain/rainbond/util/constants"
 	"io"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
+	v1 "kubevirt.io/api/core/v1"
+	"kubevirt.io/client-go/kubecli"
 	"net/http"
 	"os"
 	"strconv"
@@ -78,6 +81,9 @@ type ServiceAction struct {
 	rainbondClient versioned.Interface
 	kubeClient     kubernetes.Interface
 	config         *rest.Config
+	kubevirtClient kubecli.KubevirtClient
+	dbmanager      db.Manager
+	registryCli    *registry.Registry
 }
 
 type dCfg struct {
@@ -96,6 +102,9 @@ func CreateManager(conf option.Config,
 	prometheusCli prometheus.Interface,
 	rainbondClient versioned.Interface,
 	kubeClient kubernetes.Interface,
+	kubevirtClient kubecli.KubevirtClient,
+	dbmanager db.Manager,
+	registryCli *registry.Registry,
 	config *rest.Config) *ServiceAction {
 	return &ServiceAction{
 		MQClient:       mqClient,
@@ -105,6 +114,9 @@ func CreateManager(conf option.Config,
 		prometheusCli:  prometheusCli,
 		rainbondClient: rainbondClient,
 		kubeClient:     kubeClient,
+		kubevirtClient: kubevirtClient,
+		dbmanager:      dbmanager,
+		registryCli:    registryCli,
 		config:         config,
 	}
 }
@@ -383,6 +395,28 @@ func (s *ServiceAction) StartStopService(sss *api_model.StartStopStruct) error {
 		return err
 	}
 	logrus.Debugf("equeue mq startstop task success")
+	return nil
+}
+
+// PauseUNPauseService -
+func (s *ServiceAction) PauseUNPauseService(serviceID string, pauseORunpause string) error {
+	vmis, err := s.kubevirtClient.VirtualMachineInstance("").List(context.Background(), &metav1.ListOptions{LabelSelector: "service_id=" + serviceID})
+	if err != nil {
+		return err
+	}
+	if vmis.Items != nil && len(vmis.Items) > 0 {
+		vm := vmis.Items[0]
+		if pauseORunpause == "pause" {
+			err = s.kubevirtClient.VirtualMachineInstance(vm.Namespace).Pause(context.Background(), vm.Name, &v1.PauseOptions{})
+		} else if pauseORunpause == "unpause" {
+			err = s.kubevirtClient.VirtualMachineInstance(vm.Namespace).Unpause(context.Background(), vm.Name, &v1.UnpauseOptions{})
+		}
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("service id is %v vm is not exist", serviceID)
+	}
 	return nil
 }
 
@@ -1774,6 +1808,8 @@ func (s *ServiceAction) VolumnVar(tsv *dbmodel.TenantServiceVolume, tenantID, fi
 					return util.CreateAPIHandleError(400, fmt.Errorf("应用类型为'无状态'.不支持本地存储"))
 				}
 				tsv.HostPath = fmt.Sprintf("%s/tenant/%s/service/%s%s", localPath, tenantID, tsv.ServiceID, tsv.VolumePath)
+			case dbmodel.VMVolumeType.String():
+				tsv.HostPath = fmt.Sprintf("%s/tenant/%s/service/%s%s", sharePath, tenantID, tsv.ServiceID, tsv.VolumePath)
 			}
 		}
 		util.SetVolumeDefaultValue(tsv)
@@ -3228,6 +3264,8 @@ func TransStatus(eStatus string) string {
 		return "已部署"
 	case "succeeded":
 		return "已完成"
+	case "paused":
+		return "挂起"
 	}
 	return ""
 }

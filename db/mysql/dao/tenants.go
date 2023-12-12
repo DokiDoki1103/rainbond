@@ -1380,12 +1380,18 @@ func (t *TenantServiceVolumeDaoImpl) GetAllVolumes() ([]*model.TenantServiceVolu
 func (t *TenantServiceVolumeDaoImpl) AddModel(mo model.Interface) error {
 	volume := mo.(*model.TenantServiceVolume)
 	var oldvolume model.TenantServiceVolume
-	if ok := t.DB.Where("(volume_name=? or volume_path = ?) and service_id=?", volume.VolumeName, volume.VolumePath, volume.ServiceID).Find(&oldvolume).RecordNotFound(); ok {
+	if volume.VolumeType == model.VMVolumeType.String() {
 		if err := t.DB.Create(volume).Error; err != nil {
 			return err
 		}
 	} else {
-		return fmt.Errorf("service  %s volume name %s  path  %s is exist ", volume.ServiceID, volume.VolumeName, volume.VolumePath)
+		if ok := t.DB.Where("(volume_name=? or volume_path = ?) and service_id=?", volume.VolumeName, volume.VolumePath, volume.ServiceID).Find(&oldvolume).RecordNotFound(); ok {
+			if err := t.DB.Create(volume).Error; err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("service  %s volume name %s  path  %s is exist ", volume.ServiceID, volume.VolumeName, volume.VolumePath)
+		}
 	}
 	return nil
 }

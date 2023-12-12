@@ -72,6 +72,11 @@ func (v2 *V2) helmRouter() chi.Router {
 	r.Get("/check_helm_app", controller.GetManager().CheckHelmApp)
 	r.Get("/get_chart_information", controller.GetManager().GetChartInformation)
 	r.Get("/get_chart_yaml", controller.GetManager().GetYamlByChart)
+	r.Get("/get_upload_chart_information", controller.GetManager().GetUploadChartInformation)
+	r.Post("/check_upload_chart", controller.GetManager().CheckUploadChart)
+	r.Get("/get_upload_chart_resource", controller.GetManager().GetUploadChartResource)
+	r.Post("/import_upload_chart_resource", controller.GetManager().ImportUploadChartResource)
+	r.Get("/get_upload_chart_value", controller.GetManager().GetUploadChartValue)
 	return r
 }
 
@@ -176,6 +181,8 @@ func (v2 *V2) tenantNameRouter() chi.Router {
 	//代码检测
 	r.Post("/code-check", controller.GetManager().CheckCode)
 	r.Post("/servicecheck", controller.Check)
+	r.Get("/image-repositories", controller.RegistryImageRepositories)
+	r.Get("/image-tags", controller.RegistryImageTags)
 	r.Get("/servicecheck/{uuid}", controller.GetServiceCheckInfo)
 	r.Get("/resources", controller.GetManager().SingleTenantResources)
 	r.Get("/services", controller.GetManager().ServicesInfo)
@@ -276,6 +283,8 @@ func (v2 *V2) serviceRouter() chi.Router {
 	r.Post("/build", middleware.WrapEL(controller.GetManager().BuildService, dbmodel.TargetTypeService, "build-service", dbmodel.ASYNEVENTTYPE, true))
 	// component start
 	r.Post("/start", middleware.WrapEL(controller.GetManager().StartService, dbmodel.TargetTypeService, "start-service", dbmodel.ASYNEVENTTYPE, true))
+	r.Post("/pause", middleware.WrapEL(controller.GetManager().PauseService, dbmodel.TargetTypeService, "pause-service", dbmodel.ASYNEVENTTYPE, true))
+	r.Post("/un_pause", middleware.WrapEL(controller.GetManager().UNPauseService, dbmodel.TargetTypeService, "unpause-service", dbmodel.ASYNEVENTTYPE, true))
 	// component stop event set to synchronous event, not wait.
 	r.Post("/stop", middleware.WrapEL(controller.GetManager().StopService, dbmodel.TargetTypeService, "stop-service", dbmodel.SYNEVENTTYPE, false))
 	r.Post("/restart", middleware.WrapEL(controller.GetManager().RestartService, dbmodel.TargetTypeService, "restart-service", dbmodel.ASYNEVENTTYPE, true))

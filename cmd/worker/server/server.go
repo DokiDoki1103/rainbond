@@ -21,6 +21,7 @@ package server
 import (
 	kruiseclientset "github.com/openkruise/kruise-api/client/clientset/versioned"
 	"k8s.io/client-go/restmapper"
+	"kubevirt.io/client-go/kubecli"
 	"os"
 	"os/signal"
 	gateway "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/typed/apis/v1beta1"
@@ -49,7 +50,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//Run start run
+// Run start run
 func Run(s *option.Worker) error {
 	errChan := make(chan error, 2)
 	dbconfig := config.Config{
@@ -84,6 +85,7 @@ func Run(s *option.Worker) error {
 		return err
 	}
 	restConfig.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(float32(s.Config.KubeAPIQPS), s.Config.KubeAPIBurst)
+	kubevirtCli, err := kubecli.GetKubevirtClientFromRESTConfig(restConfig)
 	clientset, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		logrus.Errorf("create kube client error: %s", err.Error())
@@ -114,14 +116,14 @@ func Run(s *option.Worker) error {
 	//step 4: create component resource store
 	updateCh := channels.NewRingChannel(1024)
 	k8sVersion := k8sutil.GetKubeVersion()
-	cachestore := store.NewStore(restConfig, clientset, rainbondClient, db.GetManager(), s.Config, kruiseClient, gatewayClient, k8sVersion)
+	cachestore := store.NewStore(restConfig, clientset, rainbondClient, db.GetManager(), s.Config, kruiseClient, gatewayClient, k8sVersion, kubevirtCli)
 	if err := cachestore.Start(); err != nil {
 		logrus.Error("start kube cache store error", err)
 		return err
 	}
 
 	//step 5: create controller manager
-	controllerManager := controller.NewManager(s.Config, cachestore, clientset, runtimeClient, kruiseClient, gatewayClient)
+	controllerManager := controller.NewManager(s.Config, cachestore, clientset, runtimeClient, kruiseClient, gatewayClient, kubevirtCli)
 	defer controllerManager.Stop()
 
 	//step 6 : start runtime master

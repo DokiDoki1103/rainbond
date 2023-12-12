@@ -404,7 +404,7 @@ func ImageBuild(
 ) error {
 	// create image name
 	var buildImageName string
-	if buildType == "plug-build" {
+	if buildType == "plug-build" || buildType == "vm-build" {
 		buildImageName = plugImageName
 	} else {
 		buildImageName = CreateImageName(ServiceID, DeployVersion)
@@ -475,6 +475,11 @@ func ImageBuild(
 		Stdin:     true,
 		StdinOnce: true,
 		Command:   []string{"buildctl-daemonless.sh"},
+		Env: []corev1.EnvVar{{
+			Name:  "BUILDCTL_CONNECT_RETRIES_MAX",
+			Value: "20",
+		},
+		},
 		Args: []string{
 			"build",
 			"--frontend",
@@ -952,7 +957,7 @@ func CreateVolumesAndMounts(ServiceID, contextDir, buildType, cacheMode, cachePV
 		}
 		volumeMounts = append(volumeMounts, volumeMount)
 	}
-	if buildType == "run-build" {
+	if buildType == "run-build" || buildType == "vm-build" {
 		volume := corev1.Volume{
 			Name: "run-build",
 			VolumeSource: corev1.VolumeSource{

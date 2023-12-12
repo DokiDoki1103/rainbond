@@ -82,6 +82,9 @@ type ServiceKind string
 // ServiceKindThirdParty means third-party service
 var ServiceKindThirdParty ServiceKind = "third_party"
 
+// ServiceKindVirtualMachine -
+var ServiceKindVirtualMachine ServiceKind = "virtualmachine"
+
 // ServiceKindInternal means internal service
 var ServiceKindInternal ServiceKind = "internal"
 
@@ -103,6 +106,14 @@ func (s ServiceType) String() string {
 // IsState is state type or not
 func (s ServiceType) IsState() bool {
 	if s == ServiceTypeStateMultiple || s == ServiceTypeStateSingleton {
+		return true
+	}
+	return false
+}
+
+// IsVM is vm type or not
+func (s ServiceType) IsVM() bool {
+	if s == ServiceTypeVM {
 		return true
 	}
 	return false
@@ -144,6 +155,13 @@ func (t *TenantServices) IsState() bool {
 	return ServiceType(t.ExtendMethod).IsState()
 }
 
+func (t *TenantServices) IsVM() bool {
+	if t.ExtendMethod == "" {
+		return false
+	}
+	return ServiceType(t.ExtendMethod).IsVM()
+}
+
 // IsJob is job
 func (t *TenantServices) IsJob() bool {
 	if ServiceType(t.ExtendMethod).IsJob() {
@@ -182,6 +200,9 @@ var ServiceTypeStateSingleton ServiceType = "state_singleton"
 
 // ServiceTypeStateMultiple state_multiple
 var ServiceTypeStateMultiple ServiceType = "state_multiple"
+
+// ServiceTypeVM vm
+var ServiceTypeVM ServiceType = "vm"
 
 // ServiceTypeJob job
 var ServiceTypeJob ServiceType = "job"
@@ -523,6 +544,9 @@ var MemoryFSVolumeType VolumeType = "memoryfs"
 
 // ConfigFileVolumeType configuration file volume type
 var ConfigFileVolumeType VolumeType = "config-file"
+
+// VMVolumeType vm file volume type
+var VMVolumeType VolumeType = "vm-file"
 
 // CephRBDVolumeType ceph rbd volume type
 var CephRBDVolumeType VolumeType = "ceph-rbd"

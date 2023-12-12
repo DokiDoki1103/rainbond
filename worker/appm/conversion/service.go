@@ -28,6 +28,7 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	utilversion "k8s.io/apimachinery/pkg/util/version"
+	kubevirtv1 "kubevirt.io/api/core/v1"
 	"sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	"sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/typed/apis/v1beta1"
@@ -51,7 +52,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//ServiceSource conv ServiceSource
+// ServiceSource conv ServiceSource
 func ServiceSource(as *v1.AppService, dbmanager db.Manager) error {
 	sscs, err := dbmanager.ServiceSourceDao().GetServiceSource(as.ServiceID)
 	if err != nil {
@@ -95,7 +96,7 @@ func int32Ptr(i int) *int32 {
 	return &j
 }
 
-//TenantServiceBase conv tenant service base info
+// TenantServiceBase conv tenant service base info
 func TenantServiceBase(as *v1.AppService, dbmanager db.Manager, kruiseClient *versioned.Clientset, gatewayClient *v1beta1.GatewayV1beta1Client, inRolling bool) error {
 	tenantService, err := dbmanager.TenantServiceDao().GetServiceByID(as.ServiceID)
 	if err != nil {
@@ -152,6 +153,10 @@ func TenantServiceBase(as *v1.AppService, dbmanager db.Manager, kruiseClient *ve
 	}
 	if tenantService.IsCronJob() {
 		initBaseCronJob(as, tenantService)
+		return nil
+	}
+	if tenantService.IsVM() {
+		initBaseVirtualMachine(as, tenantService)
 		return nil
 	}
 	if !tenantService.IsState() {
@@ -229,6 +234,29 @@ func initBaseStatefulSet(as *v1.AppService, service *dbmodel.TenantServices) {
 		stateful.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
 	}
 	as.SetStatefulSet(stateful)
+}
+
+func initBaseVirtualMachine(as *v1.AppService, service *dbmodel.TenantServices) {
+	as.ServiceType = v1.TypeVirtualMachine
+	vm := as.GetVirtualMachine()
+	if vm == nil {
+		vm = &kubevirtv1.VirtualMachine{}
+	}
+	vm.Namespace = as.GetNamespace()
+	vm.Name = as.GetK8sWorkloadName()
+	vmTem := kubevirtv1.VirtualMachineInstanceTemplateSpec{ObjectMeta: metav1.ObjectMeta{}}
+	vm.Spec.Template = &vmTem
+	vm.GenerateName = strings.Replace(service.ServiceAlias, "_", "-", -1)
+	injectLabels := getInjectLabels(as)
+	vm.Labels = as.GetCommonLabels(vm.Labels, map[string]string{
+		"name":               service.ServiceAlias,
+		"version":            service.DeployVersion,
+		"kubevirt.io/domain": as.GetK8sWorkloadName(),
+	}, injectLabels)
+	r := kubevirtv1.RunStrategyAlways
+	vm.Spec.RunStrategy = &r
+
+	as.SetVirtualMachine(vm)
 }
 
 func initBaseDeployment(as *v1.AppService, service *dbmodel.TenantServices) {
