@@ -151,6 +151,7 @@ type TenantInterfaceWithV1 interface {
 	StatusService(w http.ResponseWriter, r *http.Request)
 	SecurityContextService(w http.ResponseWriter, r *http.Request)
 	InspectionService(w http.ResponseWriter, r *http.Request)
+	CodeInspectionService(w http.ResponseWriter, r *http.Request)
 	StatusServiceList(w http.ResponseWriter, r *http.Request)
 	StatusContainerID(w http.ResponseWriter, r *http.Request)
 }
