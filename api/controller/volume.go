@@ -32,7 +32,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//VolumeDependency VolumeDependency
+// VolumeDependency VolumeDependency
 func (t *TenantStruct) VolumeDependency(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "DELETE":
@@ -42,7 +42,7 @@ func (t *TenantStruct) VolumeDependency(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-//AddVolumeDependency add volume dependency
+// AddVolumeDependency add volume dependency
 func (t *TenantStruct) AddVolumeDependency(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation POST /v2/tenants/{tenant_name}/services/{service_alias}/volume-dependency v2 addVolumeDependency
 	//
@@ -86,7 +86,7 @@ func (t *TenantStruct) AddVolumeDependency(w http.ResponseWriter, r *http.Reques
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-//DeleteVolumeDependency delete volume dependency
+// DeleteVolumeDependency delete volume dependency
 func (t *TenantStruct) DeleteVolumeDependency(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation DELETE /v2/tenants/{tenant_name}/services/{service_alias}/volume-dependency v2 deleteVolumeDependency
 	//
@@ -127,7 +127,7 @@ func (t *TenantStruct) DeleteVolumeDependency(w http.ResponseWriter, r *http.Req
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-//AddVolume AddVolume
+// AddVolume AddVolume
 func (t *TenantStruct) AddVolume(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation POST /v2/tenants/{tenant_name}/services/{service_alias}/volume v2 addVolume
 	//
@@ -199,7 +199,7 @@ func (t *TenantStruct) UpdVolume(w http.ResponseWriter, r *http.Request) {
 	httputil.ReturnSuccess(r, w, "success")
 }
 
-//DeleteVolume DeleteVolume
+// DeleteVolume DeleteVolume
 func (t *TenantStruct) DeleteVolume(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation DELETE /v2/tenants/{tenant_name}/services/{service_alias}/volume v2 deleteVolume
 	//
@@ -242,7 +242,7 @@ func (t *TenantStruct) DeleteVolume(w http.ResponseWriter, r *http.Request) {
 
 //以下为V2.1版本持久化API,支持多种持久化模式
 
-//AddVolumeDependency add volume dependency
+// AddVolumeDependency add volume dependency
 func AddVolumeDependency(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation POST /v2/tenants/{tenant_name}/services/{service_alias}/depvolumes v2 addDepVolume
 	//
@@ -288,7 +288,7 @@ func AddVolumeDependency(w http.ResponseWriter, r *http.Request) {
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-//DeleteVolumeDependency delete volume dependency
+// DeleteVolumeDependency delete volume dependency
 func DeleteVolumeDependency(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation DELETE /v2/tenants/{tenant_name}/services/{service_alias}/depvolumes v2 delDepVolume
 	//
@@ -330,7 +330,7 @@ func DeleteVolumeDependency(w http.ResponseWriter, r *http.Request) {
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-//AddVolume AddVolume
+// AddVolume AddVolume
 func AddVolume(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation POST /v2/tenants/{tenant_name}/services/{service_alias}/volumes v2 addVolumes
 	//
@@ -357,6 +357,12 @@ func AddVolume(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Context().Value(ctxutil.ContextKey("tenant_id")).(string)
 	avs := &api_model.AddVolumeStruct{}
 	if ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &avs.Body, nil); !ok {
+		return
+	}
+	tenant := r.Context().Value(ctxutil.ContextKey("tenant")).(*dbmodel.Tenants)
+
+	if err := handler.CheckTenantResource(r.Context(), tenant, 0, 0, int(avs.Body.VolumeCapacity), 0, 0); err != nil {
+		httputil.ReturnBcodeError(r, w, err)
 		return
 	}
 
@@ -397,7 +403,7 @@ func AddVolume(w http.ResponseWriter, r *http.Request) {
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-//DeleteVolume DeleteVolume
+// DeleteVolume DeleteVolume
 func DeleteVolume(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation DELETE /v2/tenants/{tenant_name}/services/{service_alias}/volumes/{volume_name} v2 deleteVolumes
 	//
@@ -432,7 +438,7 @@ func DeleteVolume(w http.ResponseWriter, r *http.Request) {
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-//GetVolume 获取应用全部存储，包括依赖的存储
+// GetVolume 获取应用全部存储，包括依赖的存储
 func GetVolume(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /v2/tenants/{tenant_name}/services/{service_alias}/volumes v2 getVolumes
 	//
@@ -463,7 +469,7 @@ func GetVolume(w http.ResponseWriter, r *http.Request) {
 	httputil.ReturnSuccess(r, w, volumes)
 }
 
-//GetDepVolume 获取应用所有依赖的存储
+// GetDepVolume 获取应用所有依赖的存储
 func GetDepVolume(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /v2/tenants/{tenant_name}/services/{service_alias}/depvolumes v2 getDepVolumes
 	//

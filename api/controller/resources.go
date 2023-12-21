@@ -695,14 +695,24 @@ func (t *TenantStruct) CreateService(w http.ResponseWriter, r *http.Request) {
 	ss.TenantID = tenantID
 	// check tenant source
 	tenant := r.Context().Value(ctxutil.ContextKey("tenant")).(*dbmodel.Tenants)
-	var noMemory, noCPU int
+	var noMemory, noCPU, needStorage int
 	if ss.ContainerCPU == 0 {
 		noCPU = ss.Replicas
 	}
 	if ss.ContainerMemory == 0 {
 		noMemory = ss.Replicas
 	}
-	if err := handler.CheckTenantResource(r.Context(), tenant, ss.Replicas*ss.ContainerMemory, ss.Replicas*ss.ContainerCPU, noMemory, noCPU); err != nil {
+	storages, err := db.GetManager().TenantServiceVolumeDao().GetTenantServiceVolumesByServiceID(ss.ServiceID)
+	if err != nil {
+		httputil.ReturnResNotEnough(r, w, ss.EventID, err.Error())
+		return
+	}
+	if storages != nil && len(storages) > 0 {
+		for _, storage := range storages {
+			needStorage += int(storage.VolumeCapacity)
+		}
+	}
+	if err := handler.CheckTenantResource(r.Context(), tenant, ss.Replicas*ss.ContainerMemory, ss.Replicas*ss.ContainerCPU, needStorage, noMemory, noCPU); err != nil {
 		httputil.ReturnResNotEnough(r, w, "", err.Error())
 		return
 	}

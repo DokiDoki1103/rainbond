@@ -921,7 +921,7 @@ func createPorts(as *v1.AppService, dbmanager db.Manager) (ports []corev1.Contai
 
 func createProbe(as *v1.AppService, dbmanager db.Manager, mode string) *corev1.Probe {
 	if mode == "liveness" {
-		var probe *corev1.Probe
+		probe := new(corev1.Probe)
 		probeAttribute, err := dbmanager.ComponentK8sAttributeDao().GetByComponentIDAndName(as.ServiceID, model.K8sAttributeNameLiveNessProbe)
 		if probeAttribute != nil && probeAttribute.AttributeValue != "" {
 			err = yaml.Unmarshal([]byte(probeAttribute.AttributeValue), probe)
@@ -932,7 +932,7 @@ func createProbe(as *v1.AppService, dbmanager db.Manager, mode string) *corev1.P
 			return probe
 		}
 	} else {
-		var probe *corev1.Probe
+		probe := new(corev1.Probe)
 		probeAttribute, err := dbmanager.ComponentK8sAttributeDao().GetByComponentIDAndName(as.ServiceID, model.K8sAttributeNameReadinessProbe)
 		if probeAttribute != nil && probeAttribute.AttributeValue != "" {
 			err = yaml.Unmarshal([]byte(probeAttribute.AttributeValue), probe)
@@ -1004,7 +1004,7 @@ func createProbe(as *v1.AppService, dbmanager db.Manager, mode string) *corev1.P
 
 func createVMProbe(as *v1.AppService, dbmanager db.Manager, mode string) *kubevirtv1.Probe {
 	if mode == "liveness" {
-		var probe *kubevirtv1.Probe
+		probe := new(kubevirtv1.Probe)
 		probeAttribute, err := dbmanager.ComponentK8sAttributeDao().GetByComponentIDAndName(as.ServiceID, model.K8sAttributeNameLiveNessProbe)
 		if probeAttribute != nil && probeAttribute.AttributeValue != "" {
 			err = yaml.Unmarshal([]byte(probeAttribute.AttributeValue), probe)
@@ -1015,7 +1015,7 @@ func createVMProbe(as *v1.AppService, dbmanager db.Manager, mode string) *kubevi
 			return probe
 		}
 	} else {
-		var probe *kubevirtv1.Probe
+		probe := new(kubevirtv1.Probe)
 		probeAttribute, err := dbmanager.ComponentK8sAttributeDao().GetByComponentIDAndName(as.ServiceID, model.K8sAttributeNameReadinessProbe)
 		if probeAttribute != nil && probeAttribute.AttributeValue != "" {
 			err = yaml.Unmarshal([]byte(probeAttribute.AttributeValue), probe)

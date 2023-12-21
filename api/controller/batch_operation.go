@@ -33,8 +33,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//BatchOperation batch operation for tenant
-//support operation is : start,build,stop,update
+// BatchOperation batch operation for tenant
+// support operation is : start,build,stop,update
 func BatchOperation(w http.ResponseWriter, r *http.Request) {
 	var build model.BatchOperationReq
 	ok := httputil.ValidatorRequestStructAndErrorResponse(r, w, &build.Body, nil)
@@ -136,7 +136,7 @@ func BatchOperation(w http.ResponseWriter, r *http.Request) {
 func CheckComponentSource(ctx context.Context, tenant *dbmodel.Tenants, componentReq *model.SyncComponentReq, batchOpReqs model.BatchOpRequesters) error {
 	// componentReq  Check the application resources installed in the application market
 	// batchOpReqs  Check resources for batch operations
-	var needMemory, needCPU, noMemory, noCPU int
+	var needMemory, needCPU, needStorage, noMemory, noCPU int
 	if batchOpReqs != nil {
 		componentIDs := batchOpReqs.ComponentIDs()
 		services, err := db.GetManager().TenantServiceDao().GetServiceByIDs(componentIDs)
@@ -153,7 +153,17 @@ func CheckComponentSource(ctx context.Context, tenant *dbmodel.Tenants, componen
 			needMemory += service.Replicas * service.ContainerMemory
 			needCPU += service.Replicas * service.ContainerCPU
 		}
+		storages, err := db.GetManager().TenantServiceVolumeDao().ListVolumesByComponentIDs(componentIDs)
+		if err != nil {
+			return err
+		}
+		if storages != nil && len(storages) > 0 {
+			for _, storage := range storages {
+				needStorage += int(storage.VolumeCapacity)
+			}
+		}
 	} else {
+		var componentIDs []string
 		for _, components := range componentReq.Components {
 			if components.ComponentBase.ContainerCPU == 0 {
 				noCPU += components.ComponentBase.Replicas
@@ -163,9 +173,19 @@ func CheckComponentSource(ctx context.Context, tenant *dbmodel.Tenants, componen
 			}
 			needMemory += components.ComponentBase.Replicas * components.ComponentBase.ContainerMemory
 			needCPU += components.ComponentBase.Replicas * components.ComponentBase.ContainerCPU
+			componentIDs = append(componentIDs, components.ComponentBase.ComponentID)
+		}
+		storages, err := db.GetManager().TenantServiceVolumeDao().ListVolumesByComponentIDs(componentIDs)
+		if err != nil {
+			return err
+		}
+		if storages != nil && len(storages) > 0 {
+			for _, storage := range storages {
+				needStorage += int(storage.VolumeCapacity)
+			}
 		}
 	}
-	if err := handler.CheckTenantResource(ctx, tenant, needMemory, needCPU, noMemory, noCPU); err != nil {
+	if err := handler.CheckTenantResource(ctx, tenant, needMemory, needCPU, needStorage, noMemory, noCPU); err != nil {
 		return err
 	}
 	return nil
