@@ -55,7 +55,7 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//TenantAction tenant act
+// TenantAction tenant act
 type TenantAction struct {
 	MQClient                  mqclient.MQClient
 	statusCli                 *client.AppRuntimeSyncClient
@@ -68,7 +68,7 @@ type TenantAction struct {
 	resources                 map[string]k8sclient.Object
 }
 
-//CreateTenManager create Manger
+// CreateTenManager create Manger
 func CreateTenManager(mqc mqclient.MQClient, statusCli *client.AppRuntimeSyncClient,
 	optCfg *option.Config,
 	kubeClient *kubernetes.Clientset,
@@ -91,7 +91,7 @@ func CreateTenManager(mqc mqclient.MQClient, statusCli *client.AppRuntimeSyncCli
 	}
 }
 
-//BindTenantsResource query tenant resource used and sort
+// BindTenantsResource query tenant resource used and sort
 func (t *TenantAction) BindTenantsResource(source []*dbmodel.Tenants) api_model.TenantList {
 	var list api_model.TenantList
 	var resources = make(map[string]*pb.TenantResource, len(source))
@@ -138,7 +138,7 @@ func (t *TenantAction) BindTenantsResource(source []*dbmodel.Tenants) api_model.
 	return list
 }
 
-//GetTenants get tenants
+// GetTenants get tenants
 func (t *TenantAction) GetTenants(query string) ([]*dbmodel.Tenants, error) {
 	tenants, err := db.GetManager().TenantDao().GetALLTenants(query)
 	if err != nil {
@@ -147,7 +147,7 @@ func (t *TenantAction) GetTenants(query string) ([]*dbmodel.Tenants, error) {
 	return tenants, err
 }
 
-//GetTenantsByEid GetTenantsByEid
+// GetTenantsByEid GetTenantsByEid
 func (t *TenantAction) GetTenantsByEid(eid, query string) ([]*dbmodel.Tenants, error) {
 	tenants, err := db.GetManager().TenantDao().GetTenantByEid(eid, query)
 	if err != nil {
@@ -156,7 +156,7 @@ func (t *TenantAction) GetTenantsByEid(eid, query string) ([]*dbmodel.Tenants, e
 	return tenants, err
 }
 
-//UpdateTenant update tenant info
+// UpdateTenant update tenant info
 func (t *TenantAction) UpdateTenant(tenant *dbmodel.Tenants) error {
 	return db.GetManager().TenantDao().UpdateModel(tenant)
 }
@@ -218,7 +218,7 @@ func (t *TenantAction) DeleteTenant(ctx context.Context, tenantID string) error 
 	return nil
 }
 
-//TotalMemCPU StatsMemCPU
+// TotalMemCPU StatsMemCPU
 func (t *TenantAction) TotalMemCPU(services []*dbmodel.TenantServices) (*api_model.StatsInfo, error) {
 	cpus := 0
 	mem := 0
@@ -234,7 +234,7 @@ func (t *TenantAction) TotalMemCPU(services []*dbmodel.TenantServices) (*api_mod
 	return si, nil
 }
 
-//GetTenantsName get tenants name
+// GetTenantsName get tenants name
 func (t *TenantAction) GetTenantsName() ([]string, error) {
 	tenants, err := db.GetManager().TenantDao().GetALLTenants("")
 	if err != nil {
@@ -247,7 +247,7 @@ func (t *TenantAction) GetTenantsName() ([]string, error) {
 	return result, err
 }
 
-//GetTenantsByName get tenants
+// GetTenantsByName get tenants
 func (t *TenantAction) GetTenantsByName(name string) (*dbmodel.Tenants, error) {
 	tenant, err := db.GetManager().TenantDao().GetTenantIDByName(name)
 	if err != nil {
@@ -256,7 +256,7 @@ func (t *TenantAction) GetTenantsByName(name string) (*dbmodel.Tenants, error) {
 	return tenant, err
 }
 
-//GetTenantsByUUID get tenants
+// GetTenantsByUUID get tenants
 func (t *TenantAction) GetTenantsByUUID(uuid string) (*dbmodel.Tenants, error) {
 	tenant, err := db.GetManager().TenantDao().GetTenantByUUID(uuid)
 	if err != nil {
@@ -266,7 +266,7 @@ func (t *TenantAction) GetTenantsByUUID(uuid string) (*dbmodel.Tenants, error) {
 	return tenant, err
 }
 
-//StatsMemCPU StatsMemCPU
+// StatsMemCPU StatsMemCPU
 func (t *TenantAction) StatsMemCPU(services []*dbmodel.TenantServices) (*api_model.StatsInfo, error) {
 	cpus := 0
 	mem := 0
@@ -294,7 +294,7 @@ type QueryResult struct {
 	Status string `json:"status"`
 }
 
-//GetTenantsResources Gets the resource usage of the specified tenant.
+// GetTenantsResources Gets the resource usage of the specified tenant.
 func (t *TenantAction) GetTenantsResources(ctx context.Context, tr *api_model.TenantResources) (map[string]map[string]interface{}, error) {
 	ids, err := db.GetManager().TenantDao().GetTenantIDsByNames(tr.Body.TenantNames)
 	if err != nil {
@@ -378,7 +378,7 @@ func (t *TenantAction) GetTenantsResources(ctx context.Context, tr *api_model.Te
 	return result, nil
 }
 
-//TenantResourceStats tenant resource stats
+// TenantResourceStats tenant resource stats
 type TenantResourceStats struct {
 	TenantID            string `json:"tenant_id,omitempty"`
 	CPURequest          int64  `json:"cpu_request,omitempty"`
@@ -393,7 +393,7 @@ type TenantResourceStats struct {
 	RunningApplications int64  `json:"running_applications"`
 }
 
-//GetTenantResource get tenant resource
+// GetTenantResource get tenant resource
 func (t *TenantAction) GetTenantResource(tenantID string) (ts TenantResourceStats, err error) {
 	tr, err := t.statusCli.GetTenantResource(tenantID)
 	if err != nil {
@@ -428,7 +428,7 @@ type NodeGPU struct {
 	GPUMem   int64
 }
 
-//ClusterResourceStats cluster resource stats
+// ClusterResourceStats cluster resource stats
 type ClusterResourceStats struct {
 	AllCPU        int64
 	AllMemory     int64
@@ -554,7 +554,7 @@ func (t *TenantAction) GetAllocatableResources(ctx context.Context) (*ClusterRes
 	return re, nil
 }
 
-//GetServicesResources Gets the resource usage of the specified service.
+// GetServicesResources Gets the resource usage of the specified service.
 func (t *TenantAction) GetServicesResources(tr *api_model.ServicesResources) (re map[string]map[string]interface{}, err error) {
 	status := t.statusCli.GetStatuss(strings.Join(tr.Body.ServiceIDs, ","))
 	var running, closed []string
@@ -614,7 +614,7 @@ func (t *TenantAction) getPodNums(serviceID string) int {
 	return len(pods.OldPods) + len(pods.NewPods)
 }
 
-//TenantsSum TenantsSum
+// TenantsSum TenantsSum
 func (t *TenantAction) TenantsSum() (int, error) {
 	s, err := db.GetManager().TenantDao().GetALLTenants("")
 	if err != nil {
@@ -623,7 +623,7 @@ func (t *TenantAction) TenantsSum() (int, error) {
 	return len(s), nil
 }
 
-//GetProtocols GetProtocols
+// GetProtocols GetProtocols
 func (t *TenantAction) GetProtocols() ([]*dbmodel.RegionProcotols, *util.APIHandleError) {
 	return []*dbmodel.RegionProcotols{
 		{
@@ -656,7 +656,7 @@ func (t *TenantAction) GetProtocols() ([]*dbmodel.RegionProcotols, *util.APIHand
 	}, nil
 }
 
-//TransPlugins TransPlugins
+// TransPlugins TransPlugins
 func (t *TenantAction) TransPlugins(tenantID, tenantName, fromTenant string, pluginList []string) *util.APIHandleError {
 	tenantInfo, err := db.GetManager().TenantDao().GetTenantIDByName(fromTenant)
 	if err != nil {
@@ -698,12 +698,12 @@ func (t *TenantAction) GetServicesStatus(ids string) map[string]string {
 	return t.statusCli.GetStatuss(ids)
 }
 
-//IsClosedStatus checks if the status is closed status.
+// IsClosedStatus checks if the status is closed status.
 func (t *TenantAction) IsClosedStatus(status string) bool {
 	return t.statusCli.IsClosedStatus(status)
 }
 
-//GetClusterResource get cluster resource
+// GetClusterResource get cluster resource
 func (t *TenantAction) GetClusterResource(ctx context.Context) *ClusterResourceStats {
 	if t.initClusterResource(ctx) != nil {
 		return nil
@@ -738,15 +738,19 @@ func (t *TenantAction) CheckResourceName(ctx context.Context, namespace string, 
 }
 
 // TenantResourceQuota -
-func (t *TenantAction) TenantResourceQuota(ctx context.Context, namespace string, limitCPU, limitMemory int) error {
+func (t *TenantAction) TenantResourceQuota(ctx context.Context, namespace string, limitCPU, limitMemory, LimitStorage int) error {
 	memory := ConvertMemory(limitMemory)
 	cpu := ConvertCPU(limitCPU)
+	storage := ConvertStorage(LimitStorage)
 	resources := make(map[corev1.ResourceName]resource.Quantity)
 	if limitCPU != 0 {
 		resources[corev1.ResourceLimitsCPU] = resource.MustParse(cpu)
 	}
 	if limitMemory != 0 {
 		resources[corev1.ResourceLimitsMemory] = resource.MustParse(memory)
+	}
+	if LimitStorage != 0 {
+		resources[corev1.ResourceRequestsStorage] = resource.MustParse(storage)
 	}
 	quota := &corev1.ResourceQuota{
 		ObjectMeta: metav1.ObjectMeta{
@@ -760,7 +764,7 @@ func (t *TenantAction) TenantResourceQuota(ctx context.Context, namespace string
 	_, err := t.kubeClient.CoreV1().ResourceQuotas(namespace).Create(ctx, quota, metav1.CreateOptions{})
 	if err != nil {
 		if k8sErrors.IsAlreadyExists(err) {
-			if limitCPU == 0 && limitMemory == 0 {
+			if limitCPU == 0 && limitMemory == 0 && LimitStorage == 0 {
 				err = t.kubeClient.CoreV1().ResourceQuotas(namespace).Delete(ctx, fmt.Sprintf("%v-limits-quota", namespace), metav1.DeleteOptions{})
 				if err != nil {
 					return errors.Wrap(err, "delete tenant quotas failure")
@@ -825,6 +829,10 @@ func ConvertCPU(cpu int) string {
 	return fmt.Sprintf("%vm", cpu)
 }
 
+func ConvertStorage(storage int) string {
+	return fmt.Sprintf("%vGB", strconv.Itoa(storage))
+}
+
 func (t *TenantAction) CheckTenantResourceQuotaAndLimitRange(ctx context.Context, namespace string, noMemory, noCPU int) error {
 	quotas, err := t.kubeClient.CoreV1().ResourceQuotas(namespace).Get(ctx, fmt.Sprintf("%v-%v", namespace, "limits-quota"), metav1.GetOptions{})
 	if err != nil {
@@ -853,10 +861,10 @@ func (t *TenantAction) CheckTenantResourceQuotaAndLimitRange(ctx context.Context
 		defaultCpu = ConvertCpuToInt(cpu.String())
 		defaultMemory = limit.Default.Memory().Value()
 	}
-	if int64(noCPU)*defaultCpu > surplusCPU {
+	if ConvertCpuToInt(hardCpu.String()) > 0 && int64(noCPU)*defaultCpu > surplusCPU {
 		return errors.New("tenant_quota_cpu_lack")
 	}
-	if int64(noMemory)*defaultMemory > surplusMemory {
+	if hardMemory.Value() > 0 && int64(noMemory)*defaultMemory > surplusMemory {
 		return errors.New("tenant_quota_memory_lack")
 	}
 	return nil
