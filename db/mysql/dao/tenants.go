@@ -136,20 +136,16 @@ func (t *TenantDaoImpl) GetTenantIDsByNames(names []string) (re []string, err er
 }
 
 // GetTenantLimitsByNames get tenants memory limit
-func (t *TenantDaoImpl) GetTenantLimitsByNames(names []string) (limit map[string]int, err error) {
-	limit = make(map[string]int)
-	rows, err := t.DB.Raw("select uuid,limit_memory from tenants where name in (?)", names).Rows()
-	if err != nil {
+func (t *TenantDaoImpl) GetTenantLimitsByNames(names []string) (map[string]*model.Tenants, error) {
+	limit := make(map[string]*model.Tenants)
+	var tenants []*model.Tenants
+	if err := t.DB.Where("name IN (?)", names).Find(&tenants).Error; err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var limitmemory int
-		var uuid string
-		rows.Scan(&uuid, &limitmemory)
-		limit[uuid] = limitmemory
+	for _, tenant := range tenants {
+		limit[tenant.UUID] = tenant
 	}
-	return
+	return limit, nil
 }
 
 // GetPagedTenants -
@@ -264,7 +260,6 @@ func (t *TenantServicesDaoImpl) GetServiceByID(serviceID string) (*model.TenantS
 	}
 	return &service, nil
 }
-
 
 // GetServiceByk8sComponentName 获取服务通过k8sname
 func (t *TenantServicesDaoImpl) GetServiceByk8sComponentName(k8sComponentName string) (*model.TenantServices, error) {

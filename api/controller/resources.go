@@ -165,7 +165,6 @@ func (t *TenantStruct) TenantResources(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-
 	rep, err := handler.GetTenantManager().GetTenantsResources(r.Context(), &tr)
 	if err != nil {
 		httputil.ReturnError(r, w, 500, fmt.Sprintf("get resources error, %v", err))

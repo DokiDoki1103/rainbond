@@ -337,16 +337,21 @@ func (t *TenantAction) GetTenantsResources(ctx context.Context, tr *api_model.Te
 		}
 	}
 	for _, tenantID := range ids {
-		var limitMemory int64
-		if l, ok := limits[tenantID]; ok && l != 0 {
-			limitMemory = int64(l)
+		var limitMemory, limitCPU, limitStorage int64
+		if l, ok := limits[tenantID]; ok && l != nil {
+			limitMemory = int64(l.LimitMemory)
+			limitCPU = int64(l.LimitCPU)
+			limitStorage = int64(l.LimitStorage)
 		} else {
 			limitMemory = clusterStats.AllMemory
+			limitCPU = clusterStats.AllCPU
+			limitStorage = int64(clusterStats.TotalDisk)
 		}
 		result[tenantID] = map[string]interface{}{
 			"tenant_id":           tenantID,
 			"limit_memory":        limitMemory,
-			"limit_cpu":           clusterStats.AllCPU,
+			"limit_cpu":           limitCPU,
+			"limit_storage":       limitStorage,
 			"service_total_num":   serviceTenantCount[tenantID],
 			"disk":                0,
 			"service_running_num": 0,
@@ -830,7 +835,7 @@ func ConvertCPU(cpu int) string {
 }
 
 func ConvertStorage(storage int) string {
-	return fmt.Sprintf("%vGB", strconv.Itoa(storage))
+	return fmt.Sprintf("%vGi", strconv.Itoa(storage))
 }
 
 func (t *TenantAction) CheckTenantResourceQuotaAndLimitRange(ctx context.Context, namespace string, noMemory, noCPU int) error {
