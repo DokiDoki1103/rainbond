@@ -362,7 +362,7 @@ func AddVolume(w http.ResponseWriter, r *http.Request) {
 	tenant := r.Context().Value(ctxutil.ContextKey("tenant")).(*dbmodel.Tenants)
 
 	if err := handler.CheckTenantResource(r.Context(), tenant, 0, 0, int(avs.Body.VolumeCapacity), 0, 0); err != nil {
-		httputil.ReturnBcodeError(r, w, err)
+		httputil.ReturnResNotEnough(r, w, "", err.Error())
 		return
 	}
 
