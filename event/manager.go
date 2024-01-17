@@ -387,6 +387,7 @@ func (l *logger) Error(message string, info map[string]string) {
 	if info == nil {
 		info = make(map[string]string)
 	}
+	logrus.Infof("event %s error %s", l.event, message)
 	info["level"] = "error"
 	l.send(message, info)
 }
@@ -398,6 +399,7 @@ func (l *logger) Debug(message string, info map[string]string) {
 	l.send(message, info)
 }
 func (l *logger) send(message string, info map[string]string) {
+	logrus.Infof("event %s %s", l.event, message)
 	info["event_id"] = l.event
 	info["message"] = message
 	info["time"] = time.Now().Format(time.RFC3339)
