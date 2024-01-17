@@ -289,6 +289,7 @@ func (m *manager) RemoveHandle(server string) {
 
 // HandleLog -
 func (m *handle) HandleLog() error {
+	logrus.Infof("create event log handle core. connect server %s", m.server)
 	defer m.manager.RemoveHandle(m.server)
 	return util.Exec(m.ctx, func() error {
 		ctx, cancel := context.WithCancel(m.ctx)
