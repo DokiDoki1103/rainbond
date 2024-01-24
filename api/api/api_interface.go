@@ -55,6 +55,10 @@ type ClusterInterface interface {
 	GetAbility(w http.ResponseWriter, r *http.Request)
 	UpdateAbility(w http.ResponseWriter, r *http.Request)
 	ListRainbondComponents(w http.ResponseWriter, r *http.Request)
+	GetLangVersion(w http.ResponseWriter, r *http.Request)
+	UpdateLangVersion(w http.ResponseWriter, r *http.Request)
+	CreateLangVersion(w http.ResponseWriter, r *http.Request)
+	DeleteLangVersion(w http.ResponseWriter, r *http.Request)
 }
 
 // NodesInterface -
@@ -115,6 +119,8 @@ type ServiceInterface interface {
 	CreateService(w http.ResponseWriter, r *http.Request)
 	UpdateService(w http.ResponseWriter, r *http.Request)
 	Dependency(w http.ResponseWriter, r *http.Request)
+	Dependencys(w http.ResponseWriter, r *http.Request)
+
 	Env(w http.ResponseWriter, r *http.Request)
 	Ports(w http.ResponseWriter, r *http.Request)
 	PutPorts(w http.ResponseWriter, r *http.Request)
@@ -215,6 +221,13 @@ type AppInterface interface {
 	UploadID(w http.ResponseWriter, r *http.Request)
 }
 
+// LongVersionInterface long version interface
+type LongVersionInterface interface {
+	UploadLongVersion(w http.ResponseWriter, r *http.Request)
+	OptionLongVersion(w http.ResponseWriter, r *http.Request)
+	DownloadLongVersion(w http.ResponseWriter, r *http.Request)
+}
+
 // ApplicationInterface tenant application interface
 type ApplicationInterface interface {
 	CreateApp(w http.ResponseWriter, r *http.Request)
@@ -302,4 +315,10 @@ type PodInterface interface {
 // RegistryAuthSecretInterface registry auth secret interface
 type RegistryAuthSecretInterface interface {
 	RegistryAuthSecret(w http.ResponseWriter, r *http.Request)
+}
+
+// RegistryInterface registry  interface
+type RegistryInterface interface {
+	GetAllRepo(w http.ResponseWriter, r *http.Request)
+	GetTagsByRepoName(w http.ResponseWriter, r *http.Request)
 }
