@@ -723,3 +723,17 @@ func (m *Manager) AppGrayReleaseDaoTransactions(db *gorm.DB) dao.AppGrayReleaseD
 		DB: db,
 	}
 }
+
+// LongVersionDao 语言包信息
+func (m *Manager) LongVersionDao() dao.LongVersionDao {
+	return &mysqldao.LongVersionDaoImpl{
+		DB: m.db,
+	}
+}
+
+// LongVersionDaoTransactions 语言包信息 事务
+func (m *Manager) LongVersionDaoTransactions(db *gorm.DB) dao.LongVersionDao {
+	return &mysqldao.LongVersionDaoImpl{
+		DB: db,
+	}
+}

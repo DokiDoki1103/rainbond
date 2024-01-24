@@ -64,6 +64,15 @@ func (v2 *V2) Routes() chi.Router {
 	r.Mount("/monitor", v2.monitorRouter())
 	r.Get("/instances/monitor", controller.GetManager().InstancesMonitor)
 	r.Mount("/helm", v2.helmRouter())
+	r.Mount("/proxy-pass", v2.proxyRoute())
+
+	return r
+}
+
+func (v2 *V2) proxyRoute() chi.Router {
+	r := chi.NewRouter()
+	r.Post("/registry/repos", controller.GetManager().GetAllRepo)
+	r.Post("/registry/tags", controller.GetManager().GetTagsByRepoName)
 	return r
 }
 
@@ -141,6 +150,10 @@ func (v2 *V2) clusterRouter() chi.Router {
 	r.Get("/governance-mode", controller.GetManager().ListGovernanceMode)
 	r.Get("/rbd-components", controller.GetManager().ListRainbondComponents)
 	r.Mount("/nodes", v2.nodesRouter())
+	r.Get("/langVersion", controller.GetManager().GetLangVersion)
+	r.Post("/langVersion", controller.GetManager().CreateLangVersion)
+	r.Put("/langVersion", controller.GetManager().UpdateLangVersion)
+	r.Delete("/langVersion", controller.GetManager().DeleteLangVersion)
 	return r
 }
 
@@ -326,6 +339,8 @@ func (v2 *V2) serviceRouter() chi.Router {
 
 	//应用依赖关系增加与删除(source)
 	r.Post("/dependency", middleware.WrapEL(controller.GetManager().Dependency, dbmodel.TargetTypeService, "add-service-dependency", dbmodel.SYNEVENTTYPE, false))
+	r.Post("/dependencys", middleware.WrapEL(controller.GetManager().Dependencys, dbmodel.TargetTypeService, "add-service-dependency", dbmodel.SYNEVENTTYPE, false))
+
 	r.Delete("/dependency", middleware.WrapEL(controller.GetManager().Dependency, dbmodel.TargetTypeService, "delete-service-dependency", dbmodel.SYNEVENTTYPE, false))
 	//环境变量增删改(source)
 	r.Post("/env", middleware.WrapEL(controller.GetManager().Env, dbmodel.TargetTypeService, "add-service-env", dbmodel.SYNEVENTTYPE, false))

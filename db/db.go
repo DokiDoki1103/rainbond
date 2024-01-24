@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2018 Goodrain Co., Ltd.
+// Copyright (C) 2014-2024 Goodrain Co., Ltd.
 // RAINBOND, Application Management Platform
 
 // This program is free software: you can redistribute it and/or modify
@@ -52,6 +52,8 @@ type Manager interface {
 	AppGrayReleaseDao() dao.AppGrayReleaseDao
 	AppGrayReleaseDaoTransactions(db *gorm.DB) dao.AppGrayReleaseDao
 	EnterpriseDao() dao.EnterpriseDao
+	LongVersionDao() dao.LongVersionDao
+	LongVersionDaoTransactions(db *gorm.DB) dao.LongVersionDao
 	TenantDao() dao.TenantDao
 	TenantDaoTransactions(db *gorm.DB) dao.TenantDao
 	TenantServiceDao() dao.TenantServiceDao

@@ -681,3 +681,13 @@ type AppGrayReleaseDao interface {
 	Dao
 	GetGrayRelease(appID string) (model.AppGrayRelease, error)
 }
+
+// LongVersionDao language pack
+type LongVersionDao interface {
+	Dao
+	ListVersionByLanguage(language string) ([]*model.EnterpriseLanguageVersion, error)
+	GetVersionByLanguageAndVersion(language, version string) (*model.EnterpriseLanguageVersion, error)
+	DefaultLangVersion(lang string, version string) error
+	CreateLangVersion(lang, version, eventID, fileName string) error
+	DeleteLangVersion(lang, version string) (string, error)
+}

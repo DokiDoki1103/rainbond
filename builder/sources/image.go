@@ -450,6 +450,11 @@ func ImageBuild(
 								Operator: corev1.NodeSelectorOpIn,
 								Values:   []string{arch},
 							},
+							{
+								Key:      "kubernetes.io/hostname",
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   []string{os.Getenv("HOST_IP")},
+							},
 						},
 					},
 					},

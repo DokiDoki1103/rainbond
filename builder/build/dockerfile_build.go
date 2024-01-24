@@ -111,6 +111,11 @@ func (d *dockerfileBuild) runBuildJob(re *Request, buildImageName string) error 
 								Operator: corev1.NodeSelectorOpIn,
 								Values:   []string{re.Arch},
 							},
+							{
+								Key:      "kubernetes.io/hostname",
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   []string{os.Getenv("HOST_IP")},
+							},
 						},
 					},
 					},
@@ -168,6 +173,13 @@ func (d *dockerfileBuild) runBuildJob(re *Request, buildImageName string) error 
 	if len(re.BuildKitArgs) > 0 {
 		container.Args = append(container.Args, re.BuildKitArgs...)
 	}
+	for key := range re.BuildEnvs {
+		if strings.HasPrefix(key, "ARG_") {
+			envKey := strings.Replace(key, "ARG_", "", -1)
+			container.Args = append(container.Args, fmt.Sprintf("--opt=build-arg:%s=%s", envKey, re.BuildEnvs[key]))
+		}
+	}
+
 	container.VolumeMounts = mounts
 	podSpec.Containers = append(podSpec.Containers, container)
 	job.Spec = podSpec

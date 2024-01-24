@@ -23,6 +23,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/goodrain/rainbond/pkg/interceptors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -105,7 +106,7 @@ func (m *Manager) SetMiddleware() {
 		r.Use(middleware.DefaultLogger)
 	}
 	//Gracefully absorb panics and prints the stack trace
-	r.Use(middleware.Recoverer)
+	r.Use(interceptors.Recoverer)
 	//request time out
 	r.Use(middleware.Timeout(time.Second * 5))
 	//simple authz
@@ -176,6 +177,7 @@ func (m *Manager) Run() {
 		websocketRouter.Mount("/app", websocket.AppRoutes())
 		websocketRouter.Mount("/package_build", websocket.PackageBuildRoutes())
 		websocketRouter.Mount("/v2/file-operate", websocket.FileOperateRoutes())
+		websocketRouter.Mount("/lg_pack_operate", websocket.LongVersionRoutes())
 		if m.conf.WebsocketSSL {
 			logrus.Infof("websocket listen on (HTTPs) %s", m.conf.WebsocketAddr)
 			logrus.Fatal(http.ListenAndServeTLS(m.conf.WebsocketAddr, m.conf.WebsocketCertFile, m.conf.WebsocketKeyFile, websocketRouter))
