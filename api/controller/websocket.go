@@ -21,7 +21,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/goodrain/rainbond/api/discover"
 	"github.com/goodrain/rainbond/api/util"
 	"github.com/goodrain/rainbond/config/configs"
 	dbmodel "github.com/goodrain/rainbond/db/model"
@@ -231,9 +230,9 @@ type FileManage struct {
 func GetFileManage() *FileManage {
 	if fileManage == nil {
 		fileManage = &FileManage{
-			socketproxy: proxy.CreateProxy("acp_node", "http", []string{"127.0.0.1:6100"}),
+			socketproxy: proxy.CreateProxy("acp_node", "http", []string{"rbd-node:6100"}),
 		}
-		discover.GetEndpointDiscover().AddProject("acp_node", fileManage.socketproxy)
+		//discover.GetEndpointDiscover().AddProject("acp_node", fileManage.socketproxy)
 	}
 	return fileManage
 }
