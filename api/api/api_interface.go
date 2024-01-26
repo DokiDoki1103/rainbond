@@ -321,4 +321,5 @@ type RegistryAuthSecretInterface interface {
 type RegistryInterface interface {
 	GetAllRepo(w http.ResponseWriter, r *http.Request)
 	GetTagsByRepoName(w http.ResponseWriter, r *http.Request)
+	CheckRegistry(w http.ResponseWriter, r *http.Request)
 }
