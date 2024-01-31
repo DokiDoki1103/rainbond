@@ -244,7 +244,9 @@ func (c *containerdImageCliImpl) ImagePush(image, user, pass string, logger even
 			containerd.WithResolver(resolver),
 			containerd.WithImageHandler(jobHandler),
 		}
-		return c.client.Push(ctx, reference, desc, ropts...)
+		err := c.client.Push(ctx, reference, desc, ropts...)
+		logrus.Errorf("push image error: %s", err.Error())
+		return err
 	})
 	eg.Go(func() error {
 		var (
