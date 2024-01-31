@@ -195,11 +195,10 @@ func (c *containerdImageCliImpl) ImagePush(image, user, pass string, logger even
 		logrus.Errorf("unable to resolve image to more manifest: %s", err.Error())
 		return errors.Wrap(err, "unable to resolve image to more manifest")
 	}
-	matcher := platforms.NewMatcher(platforms.DefaultSpec())
-
+	platform := platforms.Default()
 	if len(manifests) > 0 {
 		for _, manifest := range manifests {
-			if manifest.Platform != nil && matcher.Match(*manifest.Platform) {
+			if manifest.Platform != nil && platform.Match(*manifest.Platform) {
 				if _, err := images.Children(ctx, cs, manifest); err != nil {
 					return errors.Wrap(err, "no matching manifest")
 				}
@@ -236,7 +235,7 @@ func (c *containerdImageCliImpl) ImagePush(image, user, pass string, logger even
 		})
 
 		var ropts = []containerd.RemoteOpt{
-			containerd.WithPlatformMatcher(platforms.Default()),
+			containerd.WithPlatformMatcher(platform),
 			containerd.WithResolver(resolver),
 			containerd.WithImageHandler(jobHandler),
 		}
@@ -268,7 +267,7 @@ func (c *containerdImageCliImpl) ImagePush(image, user, pass string, logger even
 	})
 	// create a container
 	printLog(logger, "info", fmt.Sprintf("success push image：%s", reference), map[string]string{"step": "pushimage"})
-	return nil
+	return eg.Wait()
 }
 
 // ImageTag change docker image tag
