@@ -195,6 +195,7 @@ func (c *containerdImageCliImpl) ImagePush(image, user, pass string, logger even
 		logrus.Errorf("unable to resolve image to more manifest: %s", err.Error())
 		return errors.Wrap(err, "unable to resolve image to more manifest")
 	}
+	logrus.Infof("manifests: %v", manifests)
 	if len(manifests) > 0 {
 		var matchedManifest ocispec.Descriptor
 		matcher := platforms.NewMatcher(platforms.DefaultSpec())
