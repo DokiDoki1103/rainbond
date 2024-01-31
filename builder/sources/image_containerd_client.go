@@ -195,23 +195,18 @@ func (c *containerdImageCliImpl) ImagePush(image, user, pass string, logger even
 		logrus.Errorf("unable to resolve image to more manifest: %s", err.Error())
 		return errors.Wrap(err, "unable to resolve image to more manifest")
 	}
-	logrus.Infof("manifests: %v", manifests)
 	if len(manifests) > 0 {
-		var matchedManifest ocispec.Descriptor
 		matcher := platforms.NewMatcher(platforms.DefaultSpec())
 		for _, manifest := range manifests {
 			if manifest.Platform != nil && matcher.Match(*manifest.Platform) {
 				if _, err := images.Children(ctx, cs, manifest); err != nil {
 					return errors.Wrap(err, "no matching manifest")
 				}
-				matchedManifest = manifest
-				desc = manifest
+				//desc = manifest
+				logrus.Infof(manifest.Platform.OS)
+				logrus.Infof("push image manifest: %s", manifest.Digest.String())
 				break
 			}
-		}
-		if &matchedManifest == nil {
-			logrus.Errorf("more no matching manifest: %s", err.Error())
-			return errors.Wrap(err, "more no matching manifest")
 		}
 	}
 	NewTracker := docker.NewInMemoryTracker()
