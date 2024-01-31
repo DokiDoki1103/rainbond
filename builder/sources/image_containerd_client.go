@@ -195,16 +195,16 @@ func (c *containerdImageCliImpl) ImagePush(image, user, pass string, logger even
 		logrus.Errorf("unable to resolve image to more manifest: %s", err.Error())
 		return errors.Wrap(err, "unable to resolve image to more manifest")
 	}
+	matcher := platforms.NewMatcher(platforms.DefaultSpec())
+
 	if len(manifests) > 0 {
-		matcher := platforms.NewMatcher(platforms.DefaultSpec())
 		for _, manifest := range manifests {
 			if manifest.Platform != nil && matcher.Match(*manifest.Platform) {
 				if _, err := images.Children(ctx, cs, manifest); err != nil {
 					return errors.Wrap(err, "no matching manifest")
 				}
-				//desc = manifest
-				logrus.Infof(manifest.Platform.OS)
-				logrus.Infof("push image manifest: %s", manifest.Digest.String())
+				desc = manifest
+				logrus.Infof("%s push image manifest: %s", manifest.Platform.OS, manifest.Digest.String())
 				break
 			}
 		}
@@ -235,7 +235,8 @@ func (c *containerdImageCliImpl) ImagePush(image, user, pass string, logger even
 			return nil, nil
 		})
 
-		ropts := []containerd.RemoteOpt{
+		var ropts = []containerd.RemoteOpt{
+			containerd.WithPlatformMatcher(platforms.Default()),
 			containerd.WithResolver(resolver),
 			containerd.WithImageHandler(jobHandler),
 		}
