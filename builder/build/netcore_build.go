@@ -139,7 +139,7 @@ func (d *customDockerfileBuild) Build(re *Request) (*Response, error) {
 func (d *customDockerfileBuild) writeDockerfile(sourceDir string, envs map[string]string, lang code.Lang) error {
 	if lang == code.NetCore {
 		version := envs["DOTNET_SDK_VERSION"]
-		compilerVersion, err := db.GetManager().LongVersionDao().GetVersionByLanguageAndVersion("net_compiler", version)
+		compilerVersion, err := db.GetManager().LongVersionDao().GetVersionByLanguageAndVersion("net_sdk", version)
 		if err != nil {
 			return err
 		}

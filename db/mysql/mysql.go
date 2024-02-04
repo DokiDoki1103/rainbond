@@ -35,7 +35,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-//Manager db manager
+// Manager db manager
 type Manager struct {
 	db      *gorm.DB
 	config  config.Config
@@ -43,7 +43,7 @@ type Manager struct {
 	models  []model.Interface
 }
 
-//CreateManager create manager
+// CreateManager create manager
 func CreateManager(config config.Config) (*Manager, error) {
 	var db *gorm.DB
 	if config.DBType == "mysql" {
@@ -605,37 +605,37 @@ var NodeInitVersion = []*model.EnterpriseLanguageVersion{
 // WebCompilerInitVersion -
 var WebCompilerInitVersion = []*model.EnterpriseLanguageVersion{
 	{
-		Lang:        "web_compiler",
+		Lang:        "java_server",
 		Version:     "tomcat85",
 		FirstChoice: true,
 		System:      true,
 		FileName:    "tomcat85.tar.gz",
 	}, {
-		Lang:        "web_compiler",
+		Lang:        "java_server",
 		Version:     "tomcat7",
 		FirstChoice: false,
 		System:      true,
 		FileName:    "tomcat7.tar.gz",
 	}, {
-		Lang:        "web_compiler",
+		Lang:        "java_server",
 		Version:     "tomcat8",
 		FirstChoice: false,
 		System:      true,
 		FileName:    "tomcat8.tar.gz",
 	}, {
-		Lang:        "web_compiler",
+		Lang:        "java_server",
 		Version:     "tomcat9",
 		FirstChoice: false,
 		System:      true,
 		FileName:    "tomcat9.tar.gz",
 	}, {
-		Lang:        "web_compiler",
+		Lang:        "java_server",
 		Version:     "jetty7",
 		FirstChoice: false,
 		System:      true,
 		FileName:    "jetty7.tar.gz",
 	}, {
-		Lang:        "web_compiler",
+		Lang:        "java_server",
 		Version:     "jetty9",
 		FirstChoice: false,
 		System:      true,
@@ -663,13 +663,13 @@ var WebRuntimeInitVersion = []*model.EnterpriseLanguageVersion{
 // NetCompilerInitVersion -
 var NetCompilerInitVersion = []*model.EnterpriseLanguageVersion{
 	{
-		Lang:        "net_compiler",
+		Lang:        "net_sdk",
 		Version:     "2.2",
 		FirstChoice: true,
 		System:      true,
 		FileName:    "mcr.microsoft.com/dotnet/core/sdk:2.2",
 	}, {
-		Lang:        "net_compiler",
+		Lang:        "net_sdk",
 		Version:     "2.1",
 		FirstChoice: false,
 		System:      true,

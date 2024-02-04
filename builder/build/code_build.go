@@ -421,7 +421,7 @@ func (s *slugBuild) runBuildJob(re *Request) error {
 			}
 		}
 		if k == "RUNTIMES_SERVER" {
-			language := "web_compiler"
+			language := "java_server"
 			if re.Lang == code.Static || re.Lang == code.PHP {
 				language = "web_runtime"
 			}
