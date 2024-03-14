@@ -19,10 +19,9 @@
 package exector
 
 import (
-	"context"
 	"fmt"
-	"github.com/coreos/etcd/clientv3"
 	"github.com/goodrain/rainbond/builder"
+	"github.com/goodrain/rainbond/db"
 
 	"github.com/goodrain/rainbond/builder/sources"
 	"github.com/goodrain/rainbond/event"
@@ -57,11 +56,10 @@ type ImageShareItem struct {
 		} `json:"image_info,omitempty"`
 	} `json:"share_info"`
 	ImageClient sources.ImageClient
-	EtcdCli     *clientv3.Client
 }
 
 // NewImageShareItem 创建实体
-func NewImageShareItem(in []byte, imageClient sources.ImageClient, EtcdCli *clientv3.Client) (*ImageShareItem, error) {
+func NewImageShareItem(in []byte, imageClient sources.ImageClient) (*ImageShareItem, error) {
 	var isi ImageShareItem
 	if err := ffjson.Unmarshal(in, &isi); err != nil {
 		return nil, err
@@ -71,7 +69,6 @@ func NewImageShareItem(in []byte, imageClient sources.ImageClient, EtcdCli *clie
 	eventID := isi.ShareInfo.EventID
 	isi.Logger = event.GetManager().GetLogger(eventID)
 	isi.ImageClient = imageClient
-	isi.EtcdCli = EtcdCli
 	return &isi, nil
 }
 
@@ -125,9 +122,7 @@ func (i *ImageShareItem) UpdateShareStatus(status string) error {
 		ShareID: i.ShareID,
 		Status:  status,
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	_, err := i.EtcdCli.Put(ctx, fmt.Sprintf("/rainbond/shareresult/%s", i.ShareID), ss.String())
+	err := db.GetManager().KeyValueDao().Put(fmt.Sprintf("/rainbond/shareresult/%s", i.ShareID), ss.String())
 	if err != nil {
 		logrus.Errorf("put shareresult  %s into etcd error, %v", i.ShareID, err)
 		i.Logger.Error("存储分享结果失败。", map[string]string{"step": "callback", "status": "failure"})

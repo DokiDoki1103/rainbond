@@ -52,6 +52,7 @@ type V2Manager interface {
 	api.RegistryAuthSecretInterface
 	api.HelmInterface
 	api.RegistryInterface
+	api.GatewayInterface
 }
 
 var defaultV2Manager V2Manager
@@ -80,7 +81,6 @@ func NewManager(conf option.Config, statusCli *client.AppRuntimeSyncClient) (*V2
 	v2r.GatewayStruct.cfg = &conf
 	v2r.LabelController.optconfig = &conf
 	eventServerProxy := proxy.CreateProxy("eventlog", "http", []string{"local=>rbd-eventlog:6363"})
-	//discover.GetEndpointDiscover().AddProject("event_log_event_http", eventServerProxy)
 	v2r.EventLogStruct.EventlogServerProxy = eventServerProxy
 	return &v2r, nil
 }

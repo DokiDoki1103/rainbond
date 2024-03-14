@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	api_model "github.com/goodrain/rainbond/api/model"
+	apimodel "github.com/goodrain/rainbond/api/model"
 	"github.com/goodrain/rainbond/api/util"
 	"github.com/goodrain/rainbond/db"
 	dbmodel "github.com/goodrain/rainbond/db/model"
@@ -31,46 +31,46 @@ import (
 )
 
 // HandleK8SResourceObjectsName -
-func HandleK8SResourceObjectsName(k8sResourceObjects []api_model.K8sResourceObject) map[string]api_model.LabelResource {
-	fileResource := make(map[string]api_model.LabelResource)
+func HandleK8SResourceObjectsName(k8sResourceObjects []apimodel.K8sResourceObject) map[string]apimodel.LabelResource {
+	fileResource := make(map[string]apimodel.LabelResource)
 	var DeployNames, JobNames, CJNames, STSNames, RoleNames, HPANames, RBNames, SANames, SecretNames, ServiceNames, CMNames, NetworkPolicyNames, IngressNames, PVCNames []string
 	defaultResource := make(map[string][]string)
 	for _, k8sResourceObject := range k8sResourceObjects {
 		if k8sResourceObject.Error != "" {
-			fileResource[k8sResourceObject.FileName] = api_model.LabelResource{
+			fileResource[k8sResourceObject.FileName] = apimodel.LabelResource{
 				Status: k8sResourceObject.Error,
 			}
 			continue
 		}
 		for _, buildResource := range k8sResourceObject.BuildResources {
 			switch buildResource.Resource.GetKind() {
-			case api_model.Deployment:
+			case apimodel.Deployment:
 				DeployNames = append(DeployNames, buildResource.Resource.GetName())
-			case api_model.Job:
+			case apimodel.Job:
 				JobNames = append(JobNames, buildResource.Resource.GetName())
-			case api_model.CronJob:
+			case apimodel.CronJob:
 				CJNames = append(CJNames, buildResource.Resource.GetName())
-			case api_model.StateFulSet:
+			case apimodel.StateFulSet:
 				STSNames = append(STSNames, buildResource.Resource.GetName())
-			case api_model.Role:
+			case apimodel.Role:
 				RoleNames = append(RoleNames, buildResource.Resource.GetName())
-			case api_model.HorizontalPodAutoscaler:
+			case apimodel.HorizontalPodAutoscaler:
 				HPANames = append(HPANames, buildResource.Resource.GetName())
-			case api_model.RoleBinding:
+			case apimodel.RoleBinding:
 				RBNames = append(RBNames, buildResource.Resource.GetName())
-			case api_model.ServiceAccount:
+			case apimodel.ServiceAccount:
 				SANames = append(SANames, buildResource.Resource.GetName())
-			case api_model.Secret:
+			case apimodel.Secret:
 				SecretNames = append(SecretNames, buildResource.Resource.GetName())
-			case api_model.Service:
+			case apimodel.Service:
 				ServiceNames = append(ServiceNames, buildResource.Resource.GetName())
-			case api_model.ConfigMap:
+			case apimodel.ConfigMap:
 				CMNames = append(CMNames, buildResource.Resource.GetName())
-			case api_model.NetworkPolicy:
+			case apimodel.NetworkPolicy:
 				NetworkPolicyNames = append(NetworkPolicyNames, buildResource.Resource.GetName())
-			case api_model.Ingress:
+			case apimodel.Ingress:
 				IngressNames = append(IngressNames, buildResource.Resource.GetName())
-			case api_model.PVC:
+			case apimodel.PVC:
 				PVCNames = append(PVCNames, buildResource.Resource.GetName())
 			default:
 				defaultNames, ok := defaultResource[buildResource.Resource.GetKind()]
@@ -82,15 +82,15 @@ func HandleK8SResourceObjectsName(k8sResourceObjects []api_model.K8sResourceObje
 			}
 		}
 	}
-	fileResource["app_resource"] = api_model.LabelResource{
+	fileResource["app_resource"] = apimodel.LabelResource{
 		UnSupport: defaultResource,
-		Workloads: api_model.WorkLoadsResource{
+		Workloads: apimodel.WorkLoadsResource{
 			Deployments:  DeployNames,
 			Jobs:         JobNames,
 			CronJobs:     CJNames,
 			StateFulSets: STSNames,
 		},
-		Others: api_model.OtherResource{
+		Others: apimodel.OtherResource{
 			Services:                 ServiceNames,
 			PVC:                      PVCNames,
 			Ingresses:                IngressNames,
@@ -108,20 +108,20 @@ func HandleK8SResourceObjectsName(k8sResourceObjects []api_model.K8sResourceObje
 }
 
 // AppYamlResourceName -
-func (c *clusterAction) AppYamlResourceName(yamlResource api_model.YamlResource) (map[string]api_model.LabelResource, *util.APIHandleError) {
+func (c *clusterAction) AppYamlResourceName(yamlResource apimodel.YamlResource) (map[string]apimodel.LabelResource, *util.APIHandleError) {
 	logrus.Infof("AppYamlResourceName begin")
-	k8sResourceObjects := c.YamlToResource(yamlResource, api_model.YamlSourceFile, "")
+	k8sResourceObjects := c.YamlToResource(yamlResource, apimodel.YamlSourceFile, "")
 	fileResource := HandleK8SResourceObjectsName(k8sResourceObjects)
 	logrus.Infof("AppYamlResourceName end")
 	return fileResource, nil
 }
 
 // AppYamlResourceDetailed -
-func (c *clusterAction) AppYamlResourceDetailed(yamlResource api_model.YamlResource, yamlImport bool) (api_model.ApplicationResource, *util.APIHandleError) {
+func (c *clusterAction) AppYamlResourceDetailed(yamlResource apimodel.YamlResource, yamlImport bool) (apimodel.ApplicationResource, *util.APIHandleError) {
 	logrus.Infof("AppYamlResourceDetailed begin")
-	source := api_model.YamlSourceFile
+	source := apimodel.YamlSourceFile
 	if yamlResource.Yaml != "" {
-		source = api_model.YamlSourceHelm
+		source = apimodel.YamlSourceHelm
 	}
 	k8sResourceObjects := c.YamlToResource(yamlResource, source, yamlResource.Yaml)
 	appResource := HandleDetailResource(yamlResource.Namespace, k8sResourceObjects, yamlImport, c.clientset, c.mapper)
@@ -129,22 +129,22 @@ func (c *clusterAction) AppYamlResourceDetailed(yamlResource api_model.YamlResou
 }
 
 // AppYamlResourceImport -
-func (c *clusterAction) AppYamlResourceImport(namespace, tenantID, appID string, components api_model.ApplicationResource) (api_model.AppComponent, *util.APIHandleError) {
+func (c *clusterAction) AppYamlResourceImport(namespace, tenantID, appID string, components apimodel.ApplicationResource) (apimodel.AppComponent, *util.APIHandleError) {
 	logrus.Infof("AppYamlResourceImport begin")
 	app, err := db.GetManager().ApplicationDao().GetAppByID(appID)
 	if err != nil {
-		return api_model.AppComponent{}, &util.APIHandleError{Code: 400, Err: fmt.Errorf("GetAppByID error %v", err)}
+		return apimodel.AppComponent{}, &util.APIHandleError{Code: 400, Err: fmt.Errorf("GetAppByID error %v", err)}
 	}
-	var ar api_model.AppComponent
+	var ar apimodel.AppComponent
 	k8sResource, err := c.CreateK8sResource(components.KubernetesResources, app.AppID)
 	if err != nil {
 		logrus.Errorf("create K8sResources err:%v", err)
 		return ar, &util.APIHandleError{Code: 400, Err: fmt.Errorf("create K8sResources err:%v", err)}
 	}
-	var componentAttributes []api_model.ComponentAttributes
+	var componentAttributes []apimodel.ComponentAttributes
 	existComponents, err := db.GetManager().TenantServiceDao().ListByAppID(app.AppID)
 	if err != nil {
-		return api_model.AppComponent{}, &util.APIHandleError{Code: 400, Err: fmt.Errorf("get app service by appID failure: %v", err)}
+		return apimodel.AppComponent{}, &util.APIHandleError{Code: 400, Err: fmt.Errorf("get app service by appID failure: %v", err)}
 	}
 	for _, componentResource := range components.ConvertResource {
 		component, err := c.CreateComponent(app, tenantID, componentResource, namespace, true, existComponents)
@@ -158,7 +158,7 @@ func (c *clusterAction) AppYamlResourceImport(namespace, tenantID, appID string,
 		componentResource.TelescopicManagement.RuleID = c.createTelescopic(componentResource.TelescopicManagement, component)
 		componentResource.HealthyCheckManagement.ProbeID = c.createHealthyCheck(componentResource.HealthyCheckManagement, component, "add")
 		c.createK8sAttributes(componentResource.ComponentK8sAttributesManagement, tenantID, component)
-		componentAttributes = append(componentAttributes, api_model.ComponentAttributes{
+		componentAttributes = append(componentAttributes, apimodel.ComponentAttributes{
 			TS:                     component,
 			Image:                  componentResource.BasicManagement.Image,
 			Cmd:                    componentResource.BasicManagement.Cmd,
@@ -170,38 +170,38 @@ func (c *clusterAction) AppYamlResourceImport(namespace, tenantID, appID string,
 			ComponentK8sAttributes: componentResource.ComponentK8sAttributesManagement,
 		})
 	}
-	ar = api_model.AppComponent{
+	ar = apimodel.AppComponent{
 		App:          app,
 		K8sResources: k8sResource,
 		Component:    componentAttributes,
 	}
 
 	if err != nil {
-		return api_model.AppComponent{}, &util.APIHandleError{Code: 400, Err: fmt.Errorf("app yaml resource import error:%v", err)}
+		return apimodel.AppComponent{}, &util.APIHandleError{Code: 400, Err: fmt.Errorf("app yaml resource import error:%v", err)}
 	}
 	logrus.Infof("AppYamlResourceImport end")
 	return ar, nil
 }
 
 // YamlToResource -
-func (c *clusterAction) YamlToResource(yamlResource api_model.YamlResource, yamlSource, yamlContent string) []api_model.K8sResourceObject {
+func (c *clusterAction) YamlToResource(yamlResource apimodel.YamlResource, yamlSource, yamlContent string) []apimodel.K8sResourceObject {
 	yamlDirectoryPath := path.Join("/grdata/package_build/temp/events", yamlResource.EventID, "*")
-	yamlFilesPath := []string{api_model.YamlSourceHelm}
-	if yamlSource == api_model.YamlSourceFile {
+	yamlFilesPath := []string{apimodel.YamlSourceHelm}
+	if yamlSource == apimodel.YamlSourceFile {
 		yamlFilesPath, _ = filepath.Glob(yamlDirectoryPath)
 	}
-	var fileBuildResourceList []api_model.K8sResourceObject
+	var fileBuildResourceList []apimodel.K8sResourceObject
 	for _, yamlFilePath := range yamlFilesPath {
 		var fileName string
 		yamlFileBytes := []byte(strings.TrimPrefix(yamlContent, "\n"))
-		if yamlSource == api_model.YamlSourceFile {
+		if yamlSource == apimodel.YamlSourceFile {
 			fileName = path.Base(yamlFilePath)
 			var err error
 			yamlFileBytes, err = ioutil.ReadFile(yamlFilePath)
 			yamlFileBytes = []byte(strings.TrimPrefix(string(yamlFileBytes), "\n"))
 			if err != nil {
 				logrus.Errorf("yaml to resource first step failure: %v", err)
-				fileBuildResourceList = append(fileBuildResourceList, api_model.K8sResourceObject{
+				fileBuildResourceList = append(fileBuildResourceList, apimodel.K8sResourceObject{
 					FileName:       fileName,
 					BuildResources: nil,
 					Error:          err.Error(),
@@ -215,7 +215,7 @@ func (c *clusterAction) YamlToResource(yamlResource api_model.YamlResource, yaml
 }
 
 // ResourceCreate -
-func ResourceCreate(buildResource api_model.BuildResource, namespace string, mapper meta.RESTMapper, clientset *kubernetes.Clientset) (*unstructured.Unstructured, error) {
+func ResourceCreate(buildResource apimodel.BuildResource, namespace string, mapper meta.RESTMapper, clientset *kubernetes.Clientset) (*unstructured.Unstructured, error) {
 	logrus.Infof("begin ResourceCreate function")
 	mapping, err := mapper.RESTMapping(buildResource.GVK.GroupKind(), buildResource.GVK.Version)
 	if err != nil {
@@ -244,12 +244,12 @@ func ResourceCreate(buildResource api_model.BuildResource, namespace string, map
 	return obj, nil
 }
 
-func handleFileORYamlToObject(fileName string, yamlFileBytes []byte, config *rest.Config) []api_model.K8sResourceObject {
-	var fileBuildResourceList []api_model.K8sResourceObject
+func handleFileORYamlToObject(fileName string, yamlFileBytes []byte, config *rest.Config) []apimodel.K8sResourceObject {
+	var fileBuildResourceList []apimodel.K8sResourceObject
 	dc, err := dynamic.NewForConfig(config)
 	if err != nil {
 		logrus.Errorf("yaml to resource second step failure: %v", err)
-		fileBuildResourceList = append(fileBuildResourceList, api_model.K8sResourceObject{
+		fileBuildResourceList = append(fileBuildResourceList, apimodel.K8sResourceObject{
 			FileName:       fileName,
 			BuildResources: nil,
 			Error:          err.Error(),
@@ -257,7 +257,7 @@ func handleFileORYamlToObject(fileName string, yamlFileBytes []byte, config *res
 		return fileBuildResourceList
 	}
 	decoder := yamlt.NewYAMLOrJSONDecoder(bytes.NewReader(yamlFileBytes), 1000)
-	var buildResourceList []api_model.BuildResource
+	var buildResourceList []apimodel.BuildResource
 	for {
 		var rawObj runtime.RawExtension
 		if err = decoder.Decode(&rawObj); err != nil {
@@ -265,7 +265,7 @@ func handleFileORYamlToObject(fileName string, yamlFileBytes []byte, config *res
 				break
 			}
 			logrus.Errorf("yaml to resource third step failure: %v", err)
-			fileBuildResourceList = append(fileBuildResourceList, api_model.K8sResourceObject{
+			fileBuildResourceList = append(fileBuildResourceList, apimodel.K8sResourceObject{
 				FileName:       fileName,
 				BuildResources: nil,
 				Error:          err.Error(),
@@ -275,7 +275,7 @@ func handleFileORYamlToObject(fileName string, yamlFileBytes []byte, config *res
 		obj, gvk, err := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
 		if err != nil {
 			logrus.Errorf("yaml to resource fourth step failure: %v", err)
-			fileBuildResourceList = append(fileBuildResourceList, api_model.K8sResourceObject{
+			fileBuildResourceList = append(fileBuildResourceList, apimodel.K8sResourceObject{
 				FileName:       fileName,
 				BuildResources: nil,
 				Error:          err.Error(),
@@ -285,7 +285,7 @@ func handleFileORYamlToObject(fileName string, yamlFileBytes []byte, config *res
 		unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 		if err != nil {
 			logrus.Errorf("yaml to resource fifth step failure: %v", err)
-			fileBuildResourceList = append(fileBuildResourceList, api_model.K8sResourceObject{
+			fileBuildResourceList = append(fileBuildResourceList, apimodel.K8sResourceObject{
 				FileName:       fileName,
 				BuildResources: nil,
 				Error:          err.Error(),
@@ -293,16 +293,16 @@ func handleFileORYamlToObject(fileName string, yamlFileBytes []byte, config *res
 			continue
 		}
 		unstructuredObj := &unstructured.Unstructured{Object: unstructuredMap}
-		buildResourceList = append(buildResourceList, api_model.BuildResource{
+		buildResourceList = append(buildResourceList, apimodel.BuildResource{
 			Resource:      unstructuredObj,
-			State:         api_model.CreateError,
+			State:         apimodel.CreateError,
 			ErrorOverview: "",
 			Dri:           nil,
 			DC:            dc,
 			GVK:           gvk,
 		})
 	}
-	fileBuildResourceList = append(fileBuildResourceList, api_model.K8sResourceObject{
+	fileBuildResourceList = append(fileBuildResourceList, apimodel.K8sResourceObject{
 		FileName:       fileName,
 		BuildResources: buildResourceList,
 		Error:          "",
@@ -311,9 +311,9 @@ func handleFileORYamlToObject(fileName string, yamlFileBytes []byte, config *res
 }
 
 // HandleDetailResource -
-func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sResourceObject, yamlImport bool, clientset *kubernetes.Clientset, mapper meta.RESTMapper) api_model.ApplicationResource {
+func HandleDetailResource(namespace string, k8sResourceObjects []apimodel.K8sResourceObject, yamlImport bool, clientset *kubernetes.Clientset, mapper meta.RESTMapper) apimodel.ApplicationResource {
 	var K8SResource []dbmodel.K8sResource
-	var ConvertResource []api_model.ConvertResource
+	var ConvertResource []apimodel.ConvertResource
 	for _, k8sResourceObject := range k8sResourceObjects {
 		if k8sResourceObject.Error != "" {
 			continue
@@ -321,14 +321,14 @@ func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sRe
 		var cms []corev1.ConfigMap
 		var hpas []autoscalingv1.HorizontalPodAutoscaler
 		for _, buildResource := range k8sResourceObject.BuildResources {
-			if buildResource.Resource.GetKind() == api_model.ConfigMap {
+			if buildResource.Resource.GetKind() == apimodel.ConfigMap {
 				var cm corev1.ConfigMap
 				cmJSON, _ := json.Marshal(buildResource.Resource)
 				json.Unmarshal(cmJSON, &cm)
 				cms = append(cms, cm)
 				continue
 			}
-			if buildResource.Resource.GetKind() == api_model.HorizontalPodAutoscaler {
+			if buildResource.Resource.GetKind() == apimodel.HorizontalPodAutoscaler {
 				var hpa autoscalingv1.HorizontalPodAutoscaler
 				cmJSON, _ := json.Marshal(buildResource.Resource)
 				json.Unmarshal(cmJSON, &hpa)
@@ -338,9 +338,9 @@ func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sRe
 
 		for _, buildResource := range k8sResourceObject.BuildResources {
 			errorOverview := "创建成功"
-			state := api_model.CreateSuccess
+			state := apimodel.CreateSuccess
 			switch buildResource.Resource.GetKind() {
-			case api_model.Deployment:
+			case apimodel.Deployment:
 				deployJSON, _ := json.Marshal(buildResource.Resource)
 				var deployObject appv1.Deployment
 				json.Unmarshal(deployJSON, &deployObject)
@@ -351,15 +351,15 @@ func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sRe
 				if cpu == 0 {
 					cpu = deployObject.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().MilliValue()
 				}
-				basic := api_model.BasicManagement{
-					ResourceType: api_model.Deployment,
+				basic := apimodel.BasicManagement{
+					ResourceType: apimodel.Deployment,
 					Replicas:     deployObject.Spec.Replicas,
 					Memory:       memory / 1024 / 1024,
 					CPU:          cpu,
 					Image:        deployObject.Spec.Template.Spec.Containers[0].Image,
 					Cmd:          strings.Join(append(deployObject.Spec.Template.Spec.Containers[0].Command, deployObject.Spec.Template.Spec.Containers[0].Args...), " "),
 				}
-				parameter := api_model.YamlResourceParameter{
+				parameter := apimodel.YamlResourceParameter{
 					ComponentsCR: &ConvertResource,
 					Basic:        basic,
 					Template:     deployObject.Spec.Template,
@@ -370,7 +370,7 @@ func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sRe
 					CMs:          cms,
 				}
 				PodTemplateSpecResource(parameter, nil, clientset)
-			case api_model.Job:
+			case apimodel.Job:
 				jobJSON, _ := json.Marshal(buildResource.Resource)
 				var jobObject batchv1.Job
 				json.Unmarshal(jobJSON, &jobObject)
@@ -381,15 +381,15 @@ func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sRe
 				if cpu == 0 {
 					cpu = jobObject.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().MilliValue()
 				}
-				basic := api_model.BasicManagement{
-					ResourceType: api_model.Job,
+				basic := apimodel.BasicManagement{
+					ResourceType: apimodel.Job,
 					Replicas:     jobObject.Spec.Completions,
 					Memory:       memory / 1024 / 1024,
 					CPU:          cpu,
 					Image:        jobObject.Spec.Template.Spec.Containers[0].Image,
 					Cmd:          strings.Join(append(jobObject.Spec.Template.Spec.Containers[0].Command, jobObject.Spec.Template.Spec.Containers[0].Args...), " "),
 				}
-				parameter := api_model.YamlResourceParameter{
+				parameter := apimodel.YamlResourceParameter{
 					ComponentsCR: &ConvertResource,
 					Basic:        basic,
 					Template:     jobObject.Spec.Template,
@@ -400,7 +400,7 @@ func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sRe
 					CMs:          cms,
 				}
 				PodTemplateSpecResource(parameter, nil, clientset)
-			case api_model.CronJob:
+			case apimodel.CronJob:
 				cjJSON, _ := json.Marshal(buildResource.Resource)
 				var cjObject batchv1.CronJob
 				json.Unmarshal(cjJSON, &cjObject)
@@ -411,15 +411,15 @@ func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sRe
 				if cpu == 0 {
 					cpu = cjObject.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().MilliValue()
 				}
-				basic := api_model.BasicManagement{
-					ResourceType: api_model.CronJob,
+				basic := apimodel.BasicManagement{
+					ResourceType: apimodel.CronJob,
 					Replicas:     cjObject.Spec.JobTemplate.Spec.Completions,
 					Memory:       memory / 1024 / 1024,
 					CPU:          cpu,
 					Image:        cjObject.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Image,
 					Cmd:          strings.Join(append(cjObject.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Command, cjObject.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Args...), " "),
 				}
-				parameter := api_model.YamlResourceParameter{
+				parameter := apimodel.YamlResourceParameter{
 					ComponentsCR: &ConvertResource,
 					Basic:        basic,
 					Template:     cjObject.Spec.JobTemplate.Spec.Template,
@@ -430,7 +430,7 @@ func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sRe
 					CMs:          cms,
 				}
 				PodTemplateSpecResource(parameter, nil, clientset)
-			case api_model.StateFulSet:
+			case apimodel.StateFulSet:
 				stsJSON, _ := json.Marshal(buildResource.Resource)
 				var stsObject appv1.StatefulSet
 				json.Unmarshal(stsJSON, &stsObject)
@@ -441,15 +441,15 @@ func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sRe
 				if cpu == 0 {
 					cpu = stsObject.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().MilliValue()
 				}
-				basic := api_model.BasicManagement{
-					ResourceType: api_model.StateFulSet,
+				basic := apimodel.BasicManagement{
+					ResourceType: apimodel.StateFulSet,
 					Replicas:     stsObject.Spec.Replicas,
 					Memory:       memory / 1024 / 1024,
 					CPU:          cpu,
 					Image:        stsObject.Spec.Template.Spec.Containers[0].Image,
 					Cmd:          strings.Join(append(stsObject.Spec.Template.Spec.Containers[0].Command, stsObject.Spec.Template.Spec.Containers[0].Args...), " "),
 				}
-				parameter := api_model.YamlResourceParameter{
+				parameter := apimodel.YamlResourceParameter{
 					ComponentsCR: &ConvertResource,
 					Basic:        basic,
 					Template:     stsObject.Spec.Template,
@@ -465,7 +465,7 @@ func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sRe
 					resource, err := ResourceCreate(buildResource, namespace, mapper, clientset)
 					if err != nil {
 						errorOverview = err.Error()
-						state = api_model.CreateError
+						state = apimodel.CreateError
 					} else {
 						buildResource.Resource = resource
 					}
@@ -487,7 +487,7 @@ func HandleDetailResource(namespace string, k8sResourceObjects []api_model.K8sRe
 
 	}
 	logrus.Infof("AppYamlResourceDetailed end")
-	return api_model.ApplicationResource{
+	return apimodel.ApplicationResource{
 		KubernetesResources: K8SResource,
 		ConvertResource:     ConvertResource,
 	}

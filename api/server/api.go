@@ -22,19 +22,18 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/coreos/etcd/clientv3"
+	"github.com/goodrain/rainbond/api/api_routers/gateway"
+	"github.com/goodrain/rainbond/api/handler"
 	"github.com/goodrain/rainbond/pkg/interceptors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/version"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/goodrain/rainbond/api/handler"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/version"
 
 	"github.com/goodrain/rainbond/util"
 
@@ -45,7 +44,6 @@ import (
 	"github.com/goodrain/rainbond/api/metric"
 	"github.com/goodrain/rainbond/api/proxy"
 
-	"github.com/goodrain/rainbond/api/api_routers/cloud"
 	"github.com/goodrain/rainbond/api/api_routers/version2"
 	"github.com/goodrain/rainbond/api/api_routers/websocket"
 
@@ -64,19 +62,17 @@ type Manager struct {
 	stopChan        chan struct{}
 	r               *chi.Mux
 	prometheusProxy proxy.Proxy
-	etcdcli         *clientv3.Client
 	exporter        *metric.Exporter
 }
 
 // NewManager newManager
-func NewManager(c option.Config, etcdcli *clientv3.Client) *Manager {
+func NewManager(c option.Config) *Manager {
 	ctx, cancel := context.WithCancel(context.Background())
 	manager := &Manager{
 		ctx:      ctx,
 		cancel:   cancel,
 		conf:     c,
 		stopChan: make(chan struct{}),
-		etcdcli:  etcdcli,
 	}
 	r := chi.NewRouter()
 	manager.r = r
@@ -108,7 +104,7 @@ func (m *Manager) SetMiddleware() {
 	//Gracefully absorb panics and prints the stack trace
 	r.Use(interceptors.Recoverer)
 	//request time out
-	r.Use(middleware.Timeout(time.Second * 5))
+	r.Use(interceptors.Timeout(time.Second * 5))
 	//simple authz
 	if os.Getenv("TOKEN") != "" {
 		r.Use(apimiddleware.FullToken)
@@ -156,13 +152,12 @@ func (m *Manager) Run() {
 	m.r.Get("/monitor", func(res http.ResponseWriter, req *http.Request) {
 		res.Write([]byte("ok"))
 	})
+	m.r.Mount("/v2/proxy-pass/gateway/{tenant_name}", gateway.Routes())
+	m.r.Mount("/api-gateway/v1/{tenant_name}", gateway.Routes())
+
 	m.r.Mount("/v2", v2R.Routes())
-	m.r.Mount("/cloud", cloud.Routes())
 	m.r.Mount("/", doc.Routes())
 	m.r.Mount("/license", license.Routes())
-	//兼容老版docker
-	m.r.Get("/v1/etcd/event-log/instances", m.EventLogInstance)
-
 	m.r.Get("/kubernetes/dashboard", m.KuberntesDashboardAPI)
 	//prometheus单节点代理
 	m.r.Get("/api/v1/query", m.PrometheusAPI)
@@ -224,30 +219,6 @@ func (m *Manager) Run() {
 	// api
 	logrus.Infof("api listen on (HTTP) %s", m.conf.APIAddr)
 	logrus.Fatal(http.ListenAndServe(m.conf.APIAddr, m.r))
-}
-
-// EventLogInstance 查询event server instance
-func (m *Manager) EventLogInstance(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithCancel(m.ctx)
-	defer cancel()
-
-	res, err := m.etcdcli.Get(ctx, "/event/instance", clientv3.WithPrefix())
-	if err != nil {
-		w.WriteHeader(500)
-		return
-	}
-	if res.Kvs != nil && len(res.Kvs) > 0 {
-		result := `{"data":{"instance":[`
-		for _, kv := range res.Kvs {
-			result += string(kv.Value) + ","
-		}
-		result = result[:len(result)-1] + `]},"ok":true}`
-		w.Write([]byte(result))
-		w.WriteHeader(200)
-		return
-	}
-	w.WriteHeader(404)
-	return
 }
 
 // PrometheusAPI prometheus api 代理

@@ -26,7 +26,9 @@ import (
 	"github.com/goodrain/rainbond/api/server"
 	"github.com/goodrain/rainbond/config/configs"
 	"github.com/goodrain/rainbond/event"
-	"github.com/goodrain/rainbond/pkg/component/etcd"
+	"github.com/goodrain/rainbond/mq/mqcomponent/grpcserver"
+	"github.com/goodrain/rainbond/mq/mqcomponent/metrics"
+	"github.com/goodrain/rainbond/mq/mqcomponent/mqclient"
 	"github.com/goodrain/rainbond/pkg/component/grpc"
 	"github.com/goodrain/rainbond/pkg/component/hubregistry"
 	"github.com/goodrain/rainbond/pkg/component/k8s"
@@ -50,11 +52,6 @@ func K8sClient() rainbond.Component {
 // HubRegistry -
 func HubRegistry() rainbond.Component {
 	return hubregistry.HubRegistry()
-}
-
-// Etcd -
-func Etcd() rainbond.Component {
-	return etcd.Etcd()
 }
 
 // MQ -
@@ -112,7 +109,7 @@ func Router() rainbond.FuncComponent {
 			logrus.Errorf("create v2 route manager error, %v", err)
 		}
 		// 启动api
-		apiManager := server.NewManager(cfg.APIConfig, etcd.Default().EtcdClient)
+		apiManager := server.NewManager(cfg.APIConfig)
 		if err := apiManager.Start(); err != nil {
 			return err
 		}
@@ -127,4 +124,19 @@ func Proxy() rainbond.FuncComponent {
 		handler.InitProxy(cfg.APIConfig)
 		return nil
 	}
+}
+
+// MQHealthServer -
+func MQHealthServer() rainbond.ComponentCancel {
+	return metrics.NewMetricsServer()
+}
+
+// MQGrpcServer -
+func MQGrpcServer() rainbond.ComponentCancel {
+	return grpcserver.NewGrpcServer()
+}
+
+// MQClient -
+func MQClient() rainbond.Component {
+	return mqclient.MQClient()
 }

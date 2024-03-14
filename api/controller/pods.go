@@ -19,18 +19,21 @@
 package controller
 
 import (
+	"bufio"
 	"fmt"
-	"net/http"
-	"strings"
-
 	"github.com/go-chi/chi"
 	"github.com/goodrain/rainbond/api/handler"
 	ctxutil "github.com/goodrain/rainbond/api/util/ctx"
 	"github.com/goodrain/rainbond/db"
 	"github.com/goodrain/rainbond/db/model"
+	"github.com/goodrain/rainbond/pkg/component/k8s"
 	httputil "github.com/goodrain/rainbond/util/http"
 	"github.com/goodrain/rainbond/worker/server"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
+	"net/http"
+	"strconv"
+	"strings"
 )
 
 // PodController is an implementation of PodInterface
@@ -115,6 +118,61 @@ func (p *PodController) PodDetail(w http.ResponseWriter, r *http.Request) {
 	httputil.ReturnSuccess(r, w, pd)
 }
 
+// PodLogs -
+func (p *PodController) PodLogs(w http.ResponseWriter, r *http.Request) {
+	tenant := r.Context().Value(ctxutil.ContextKey("tenant")).(*model.Tenants)
+	podName := chi.URLParam(r, "pod_name")
+	lines, err := strconv.Atoi(r.URL.Query().Get("lines"))
+	if err != nil {
+		lines = 100
+	}
+	tailLines := int64(lines)
+
+	req := k8s.Default().Clientset.CoreV1().Pods(tenant.Namespace).GetLogs(podName, &corev1.PodLogOptions{
+		Follow:     true,
+		Timestamps: true,
+		TailLines:  &tailLines,
+	})
+	logrus.Infof("Opening log stream for pod %s", podName)
+
+	stream, err := req.Stream(r.Context())
+	if err != nil {
+		logrus.Errorf("Error opening log stream: %v", err)
+		http.Error(w, "Error opening log stream", http.StatusInternalServerError)
+		return
+	}
+	defer stream.Close()
+	// Use Flusher to send headers to the client
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		logrus.Errorf("Streaming not supported")
+		http.Error(w, "Streaming not supported", http.StatusInternalServerError)
+		return
+	}
+
+	// Set headers for SSE
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	scanner := bufio.NewScanner(stream)
+
+	for scanner.Scan() {
+		select {
+		case <-r.Context().Done():
+			logrus.Warningf("Request context done: %v", r.Context().Err())
+			return
+		default:
+			msg := "data: " + scanner.Text() + "\n\n"
+			_, err := fmt.Fprintf(w, msg)
+			flusher.Flush()
+			if err != nil {
+				logrus.Errorf("Error writing to response: %v", err)
+			}
+		}
+	}
+}
+
 // InstancesMonitor -
 func (p *PodController) InstancesMonitor(w http.ResponseWriter, r *http.Request) {
 	nodeName := r.URL.Query().Get("node_name")
@@ -131,9 +189,9 @@ func (p *PodController) GetPodVolume(w http.ResponseWriter, r *http.Request) {
 	podName := r.URL.Query().Get("pod_name")
 	volumePath := r.URL.Query().Get("volume_path")
 	nameSpace := r.URL.Query().Get("namespace")
-	k8sComponentName:= r.URL.Query().Get("k8s_component_name")
+	k8sComponentName := r.URL.Query().Get("k8s_component_name")
 	pd, err := handler.GetPodHandler().PodVolume(volumePath, nameSpace, podName, k8sComponentName)
-	if err != nil{
+	if err != nil {
 		httputil.ReturnError(r, w, 500, fmt.Sprintf("get pod volume error: %v", err))
 	}
 	httputil.ReturnSuccess(r, w, pd)

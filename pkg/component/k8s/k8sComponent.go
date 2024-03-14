@@ -20,11 +20,13 @@ package k8s
 
 import (
 	"context"
+	apisixversioned "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/client/clientset/versioned"
 	"github.com/goodrain/rainbond/config/configs"
 	"github.com/goodrain/rainbond/pkg/generated/clientset/versioned"
 	rainbondscheme "github.com/goodrain/rainbond/pkg/generated/clientset/versioned/scheme"
 	k8sutil "github.com/goodrain/rainbond/util/k8s"
 	kruise_versioned "github.com/openkruise/kruise-api/client/clientset/versioned"
+	kruiseclientset "github.com/openkruise/kruise-api/client/clientset/versioned"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,8 +52,11 @@ type Component struct {
 	RainbondClient *versioned.Clientset
 	K8sClient      k8sclient.Client
 	KubevirtCli    kubecli.KubevirtClient
-	KruiseClient   *kruise_versioned.Clientset
-	Mapper         meta.RESTMapper
+
+	ApiSixClient *apisixversioned.Clientset
+	MetricClient *metrics.Clientset
+	KruiseClient *kruise_versioned.Clientset
+	Mapper       meta.RESTMapper
 }
 
 var defaultK8sComponent *Component
@@ -84,6 +89,18 @@ func (k *Component) Start(ctx context.Context, cfg *configs.Config) error {
 	k.DynamicClient, err = dynamic.NewForConfig(config)
 	if err != nil {
 		logrus.Errorf("create dynamic client failure: %v", err)
+		return err
+	}
+	k.KruiseClient = kruiseclientset.NewForConfigOrDie(config)
+
+	k.ApiSixClient, err = apisixversioned.NewForConfig(config)
+	if err != nil {
+		logrus.Errorf("create apisix clientset error, %v", err)
+		return err
+	}
+
+	k.MetricClient, err = metrics.NewForConfig(config)
+	if err != nil {
 		return err
 	}
 

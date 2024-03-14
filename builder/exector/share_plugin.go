@@ -19,13 +19,12 @@
 package exector
 
 import (
-	"context"
 	"fmt"
+	"github.com/goodrain/rainbond/db"
 	"time"
 
 	"github.com/goodrain/rainbond/builder"
 
-	"github.com/coreos/etcd/clientv3"
 	"github.com/goodrain/rainbond/builder/sources"
 	"github.com/goodrain/rainbond/event"
 	"github.com/pquerna/ffjson/ffjson"
@@ -48,7 +47,6 @@ type PluginShareItem struct {
 		IsTrust     bool   `json:"is_trust,omitempty"`
 	} `json:"image_info,omitempty"`
 	ImageClient sources.ImageClient
-	EtcdCli     *clientv3.Client
 }
 
 func init() {
@@ -64,7 +62,6 @@ func SharePluginItemCreater(in []byte, m *exectorManager) (TaskWorker, error) {
 		EventID: eventID,
 
 		ImageClient: m.imageClient,
-		EtcdCli:     m.EtcdCli,
 	}
 	if err := ffjson.Unmarshal(in, &pluginShare); err != nil {
 		return nil, err
@@ -129,9 +126,7 @@ func (i *PluginShareItem) updateShareStatus(status string) error {
 		ShareID: i.ShareID,
 		Status:  status,
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	_, err := i.EtcdCli.Put(ctx, fmt.Sprintf("/rainbond/shareresult/%s", i.ShareID), ss.String())
+	err := db.GetManager().KeyValueDao().Put(fmt.Sprintf("/rainbond/shareresult/%s", i.ShareID), ss.String())
 	if err != nil {
 		logrus.Errorf("put shareresult  %s into etcd error, %v", i.ShareID, err)
 		i.Logger.Error("存储分享结果失败。", map[string]string{"step": "callback", "status": "failure"})

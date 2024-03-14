@@ -116,6 +116,7 @@ func (m *Manager) TenantServicesSecurityContextDaoTransactions(db *gorm.DB) dao.
 }
 
 // TenantServicesPortDao TenantServicesPortDao
+// TenantServicesPortDao TenantServicesPortDao
 func (m *Manager) TenantServicesPortDao() dao.TenantServicesPortDao {
 	return &mysqldao.TenantServicesPortDaoImpl{
 		DB: m.db,
@@ -430,6 +431,13 @@ func (m *Manager) AppDao() dao.AppDao {
 	}
 }
 
+// AppDao app export and import info
+func (m *Manager) KeyValueDao() dao.KeyValueDao {
+	return &mysqldao.KeyValueImpl{
+		DB: m.db,
+	}
+}
+
 // ApplicationDao -
 func (m *Manager) ApplicationDao() dao.ApplicationDao {
 	return &mysqldao.ApplicationDaoImpl{
@@ -542,6 +550,7 @@ func (m *Manager) HTTPRuleDao() dao.HTTPRuleDao {
 	}
 }
 
+// HTTPRuleDaoTransactions -
 // LimitingPolicyDao HTTPRuleDao
 func (m *Manager) LimitingPolicyDao() dao.LimitingPolicyDao {
 	return &mysqldao.LimitingPolicyDaoImpl{

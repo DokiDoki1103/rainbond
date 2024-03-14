@@ -19,6 +19,8 @@
 package server
 
 import (
+	apisixversioned "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/client/clientset/versioned"
+	"github.com/goodrain/rainbond/otherclient"
 	kruiseclientset "github.com/openkruise/kruise-api/client/clientset/versioned"
 	"k8s.io/client-go/restmapper"
 	"kubevirt.io/client-go/kubecli"
@@ -55,8 +57,6 @@ func Run(s *option.Worker) error {
 	dbconfig := config.Config{
 		DBType:              s.Config.DBType,
 		MysqlConnectionInfo: s.Config.MysqlConnectionInfo,
-		EtcdEndPoints:       s.Config.EtcdEndPoints,
-		EtcdTimeout:         s.Config.EtcdTimeout,
 	}
 	//step 1:db manager init ,event log client init
 	if err := db.CreateManager(dbconfig); err != nil {
@@ -78,12 +78,22 @@ func Run(s *option.Worker) error {
 	}
 	restConfig.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(float32(s.Config.KubeAPIQPS), s.Config.KubeAPIBurst)
 	kubevirtCli, err := kubecli.GetKubevirtClientFromRESTConfig(restConfig)
+
+	// 初始化 apisix client
+	apisixclient, err := apisixversioned.NewForConfig(restConfig)
+	if err != nil {
+		logrus.Errorf("create apisix clientset error, %v", err)
+		return err
+	}
+	otherclient.SetAPISixClient(apisixclient)
+
 	clientset, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		logrus.Errorf("create kube client error: %s", err.Error())
 		return err
 	}
 	s.Config.KubeClient = clientset
+
 	runtimeClient, err := client.New(restConfig, client.Options{Scheme: common.Scheme})
 	if err != nil {
 		logrus.Errorf("create kube runtime client error: %s", err.Error())

@@ -75,7 +75,7 @@ func NewTaskManager(cfg option.Config,
 	clientset *kubernetes.Clientset) *TaskManager {
 
 	ctx, cancel := context.WithCancel(context.Background())
-	handleManager := handle.NewManager(ctx, cfg, store, controllermanager, garbageCollector,kruiseClient,gatewayClient, restConfig, mapper, clientset)
+	handleManager := handle.NewManager(ctx, cfg, store, controllermanager, garbageCollector, kruiseClient, gatewayClient, restConfig, mapper, clientset)
 	healthStatus["status"] = "health"
 	healthStatus["info"] = "worker service health"
 	return &TaskManager{
@@ -118,12 +118,6 @@ func (t *TaskManager) Do() {
 				if grpc1.ErrorDesc(err) == context.DeadlineExceeded.Error() {
 					continue
 				}
-				if grpc1.ErrorDesc(err) == "context canceled" {
-					logrus.Info("receive task core context canceled")
-					healthStatus["status"] = "unusual"
-					healthStatus["info"] = "receive task core context canceled"
-					return
-				}
 				if grpc1.ErrorDesc(err) == "context timeout" {
 					continue
 				}
@@ -165,7 +159,7 @@ func (t *TaskManager) Do() {
 
 // Stop 停止
 func (t *TaskManager) Stop() error {
-	logrus.Info("discover manager is stoping.")
+	logrus.Info("discover manager is stoping")
 	t.cancel()
 	if t.client != nil {
 		t.client.Close()

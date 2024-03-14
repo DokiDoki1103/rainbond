@@ -39,10 +39,6 @@ type Config struct {
 	BuilderAPI             []string
 	V1API                  string
 	MQAPI                  string
-	EtcdEndpoint           []string
-	EtcdCaFile             string
-	EtcdCertFile           string
-	EtcdKeyFile            string
 	APISSL                 bool
 	APICertFile            string
 	APIKeyFile             string
@@ -88,7 +84,7 @@ func (a *APIServer) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&a.LogLevel, "log-level", "info", "the api log level")
 	fs.StringVar(&a.DBType, "db-type", "mysql", "db type mysql or etcd")
 	fs.StringVar(&a.DBConnectionInfo, "mysql", "admin:admin@tcp(127.0.0.1:3306)/region", "mysql db connection info")
-	fs.StringVar(&a.APIAddr, "api-addr", "127.0.0.1:8888", "the api server listen address")
+	fs.StringVar(&a.APIAddr, "api-addr", "0.0.0.0:8888", "the api server listen address")
 	fs.StringVar(&a.APIHealthzAddr, "api-healthz-addr", "0.0.0.0:8889", "the api server health check listen address")
 	fs.StringVar(&a.APIAddrSSL, "api-addr-ssl", "0.0.0.0:8443", "the api server listen address")
 	fs.StringVar(&a.WebsocketAddr, "ws-addr", "0.0.0.0:6060", "the websocket server listen address")
@@ -103,9 +99,6 @@ func (a *APIServer) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&a.V1API, "v1-api", "127.0.0.1:8887", "the region v1 api")
 	fs.StringSliceVar(&a.BuilderAPI, "builder-api", []string{"rbd-chaos:3228"}, "the builder api")
 	fs.BoolVar(&a.StartRegionAPI, "start", false, "Whether to start region old api")
-	fs.StringVar(&a.EtcdCaFile, "etcd-ca", "", "verify etcd certificates of TLS-enabled secure servers using this CA bundle")
-	fs.StringVar(&a.EtcdCertFile, "etcd-cert", "", "identify secure etcd client using this TLS certificate file")
-	fs.StringVar(&a.EtcdKeyFile, "etcd-key", "", "identify secure etcd client using this TLS key file")
 	fs.StringVar(&a.Opentsdb, "opentsdb", "127.0.0.1:4242", "opentsdb server config")
 	fs.StringVar(&a.RegionTag, "region-tag", "test-ali", "region tag setting")
 	fs.StringVar(&a.LoggerFile, "logger-file", "/logs/request.log", "request log file path")
@@ -121,7 +114,6 @@ func (a *APIServer) AddFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&a.ShowSQL, "show-sql", false, "The trigger for showing sql.")
 	fs.StringVar(&a.GrctlImage, "shell-image", "registry.cn-hangzhou.aliyuncs.com/goodrain/rbd-shell:v5.13.0-release", "use shell image")
 
-	fs.StringSliceVar(&a.EtcdEndpoint, "etcd", []string{"http://rbd-etcd:2379"}, "etcd server or proxy address")
 	fs.StringSliceVar(&a.DockerConsoleServers, "docker-console", []string{"rbd-webcli:7171"}, "docker console address")
 	fs.StringVar(&a.PrometheusEndpoint, "prom-api", "rbd-monitor:9999", "The service DNS name of Prometheus api. Default to rbd-monitor:9999")
 	fs.StringVar(&a.RbdHub, "hub-api", "http://rbd-hub:5000", "the rbd-hub server api")
@@ -140,6 +132,5 @@ func (a *APIServer) SetLog() {
 		fmt.Println("set log level error." + err.Error())
 		return
 	}
-	logrus.Infof("Etcd Server : %+v", a.Config.EtcdEndpoint)
 	logrus.SetLevel(level)
 }

@@ -21,16 +21,12 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/coreos/etcd/clientv3"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/goodrain/rainbond/eventlog/cluster"
-	"github.com/goodrain/rainbond/eventlog/cluster/discover"
 	"github.com/goodrain/rainbond/eventlog/conf"
-	"github.com/goodrain/rainbond/eventlog/exit/monitor"
 	"github.com/goodrain/rainbond/eventlog/store"
 	"github.com/goodrain/rainbond/util"
 	httputil "github.com/goodrain/rainbond/util/http"
@@ -57,14 +53,12 @@ type SocketServer struct {
 	listenErr, errorStop chan error
 	reStart              int
 	timeout              time.Duration
-	cluster              cluster.Cluster
 	healthInfo           map[string]string
-	etcdClient           *clientv3.Client
 	pubsubCtx            map[string]*PubContext
 }
 
 // NewSocket 创建zmq sub客户端
-func NewSocket(conf conf.WebSocketConf, discoverConf conf.DiscoverConf, etcdClient *clientv3.Client, log *logrus.Entry, storeManager store.Manager, c cluster.Cluster, healthInfo map[string]string) *SocketServer {
+func NewSocket(conf conf.WebSocketConf, discoverConf conf.DiscoverConf, log *logrus.Entry, storeManager store.Manager, healthInfo map[string]string) *SocketServer {
 	ctx, cancel := context.WithCancel(context.Background())
 	d, err := time.ParseDuration(conf.TimeOut)
 	if err != nil {
@@ -81,9 +75,7 @@ func NewSocket(conf conf.WebSocketConf, discoverConf conf.DiscoverConf, etcdClie
 		listenErr:    make(chan error),
 		errorStop:    make(chan error),
 		timeout:      d,
-		cluster:      c,
 		healthInfo:   healthInfo,
-		etcdClient:   etcdClient,
 		pubsubCtx:    make(map[string]*PubContext),
 	}
 }
@@ -458,26 +450,6 @@ func (s *SocketServer) listen() {
 		w.WriteHeader(200)
 		w.Write([]byte("ok"))
 	})
-	r.Get("/docker-instance", func(w http.ResponseWriter, r *http.Request) {
-		ServiceID := r.FormValue("service_id")
-		if ServiceID == "" {
-			w.WriteHeader(412)
-			w.Write([]byte(`{"message":"service id can not be empty.","status":"failure"}`))
-			return
-		}
-		s.log.Info("ServiceID:" + ServiceID)
-		instance := s.cluster.GetSuitableInstance(ServiceID)
-		err := discover.SaveDockerLogInInstance(s.etcdClient, s.discoverConf, ServiceID, instance.HostID)
-		if err != nil {
-			s.log.Error("Save docker service and instance id to etcd error.")
-			w.WriteHeader(500)
-			w.Write([]byte(`{"message":"Save docker service and instance id to etcd error.","status":"failure"}`))
-			return
-		}
-		w.WriteHeader(200)
-		url := fmt.Sprintf("tcp://%s:%d", instance.HostIP, instance.DockerLogPort)
-		w.Write([]byte(`{"host":"` + url + `","status":"success"}`))
-	})
 	r.Get("/event_push", s.receiveEventMessage)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		if s.healthInfo["status"] != "health" {
@@ -574,8 +546,6 @@ func (s *SocketServer) receiveEventMessage(w http.ResponseWriter, r *http.Reques
 
 func (s *SocketServer) prometheus(r *chi.Mux) {
 	prometheus.MustRegister(version.NewCollector("event_log"))
-	exporter := monitor.NewExporter(s.storemanager, s.cluster)
-	prometheus.MustRegister(exporter)
 	r.Handle(s.conf.PrometheusMetricPath, promhttp.Handler())
 }
 

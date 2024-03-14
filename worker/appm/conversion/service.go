@@ -20,8 +20,14 @@ package conversion
 
 import (
 	"context"
+	kruise_versioned "github.com/openkruise/kruise-api/client/clientset/versioned"
+
 	"encoding/json"
 	"fmt"
+	gatewayv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	"time"
+
+	apimodel "github.com/goodrain/rainbond/api/model"
 	k8sutil "github.com/goodrain/rainbond/util/k8s"
 	"github.com/openkruise/kruise-api/client/clientset/versioned"
 	"github.com/openkruise/kruise-api/rollouts/v1alpha1"
@@ -30,13 +36,9 @@ import (
 	utilversion "k8s.io/apimachinery/pkg/util/version"
 	kubevirtv1 "kubevirt.io/api/core/v1"
 	"sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	"sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/typed/apis/v1beta1"
 	"strconv"
 	"strings"
-	"time"
-
-	apimodel "github.com/goodrain/rainbond/api/model"
 
 	"github.com/goodrain/rainbond/api/handler/app_governance_mode/adaptor"
 	"github.com/goodrain/rainbond/db"
@@ -486,7 +488,7 @@ func CreateHttproute(k8sApp, namespace, appID string, service []*dbmodel.TenantS
 	return name, nil
 }
 
-func CreateRollout(k8sApp, namespace string, service []*dbmodel.TenantServicesPort, component *dbmodel.TenantServices, gray *dbmodel.AppGrayRelease, kruiseClient *versioned.Clientset, gatewayClient *v1beta1.GatewayV1beta1Client) error {
+func CreateRollout(k8sApp, namespace string, service []*dbmodel.TenantServicesPort, component *dbmodel.TenantServices, gray *dbmodel.AppGrayRelease, kruiseClient *kruise_versioned.Clientset, gatewayClient *v1beta1.GatewayV1beta1Client) error {
 	annotations := make(map[string]string)
 	annotations["rollouts.kruise.io/rolling-style"] = "partition"
 	name := k8sApp + "-" + component.K8sComponentName
@@ -562,7 +564,7 @@ func CreateRollout(k8sApp, namespace string, service []*dbmodel.TenantServicesPo
 }
 
 func HandleRolloutSpec(gray *dbmodel.AppGrayRelease, serviceName, httpRouteName, deployName string) (v1alpha1.RolloutSpec, error) {
-	var matches []v1alpha1.HttpRouteMatch
+	var matches []v1alpha2.HTTPRouteMatch
 	var flowEntryRule [][]apimodel.FlowEntryRule
 	err := json.Unmarshal([]byte(gray.FlowEntryRule), &flowEntryRule)
 	if err != nil {
@@ -573,12 +575,12 @@ func HandleRolloutSpec(gray *dbmodel.AppGrayRelease, serviceName, httpRouteName,
 		for _, header := range rules {
 			headerType := v1alpha2.HeaderMatchType(header.HeaderType)
 			headers = append(headers, v1alpha2.HTTPHeaderMatch{
-				Name:  v1alpha2.HTTPHeaderName(header.HeaderKey),
+				//Name:  v1beta1.HTTPRouteInterface(header.HeaderKey),
 				Type:  &headerType,
 				Value: header.HeaderValue,
 			})
 		}
-		httpRouteMatch := v1alpha1.HttpRouteMatch{headers}
+		httpRouteMatch := v1alpha2.HTTPRouteMatch{Headers: headers}
 		matches = append(matches, httpRouteMatch)
 	}
 	var grayStrategy []int32
@@ -589,9 +591,10 @@ func HandleRolloutSpec(gray *dbmodel.AppGrayRelease, serviceName, httpRouteName,
 	var steps []v1alpha1.CanaryStep
 	for _, step := range grayStrategy {
 		weight := step
+		// TODO: matches
 		steps = append(steps, v1alpha1.CanaryStep{
-			Weight:  &weight,
-			Matches: matches,
+			Weight: &weight,
+			//Matches: matches,
 		})
 	}
 	var trafficRoutings []*v1alpha1.TrafficRouting

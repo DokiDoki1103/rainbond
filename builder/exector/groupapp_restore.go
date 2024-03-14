@@ -19,7 +19,6 @@
 package exector
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -29,7 +28,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
 	"github.com/goodrain/rainbond/builder"
 	"github.com/goodrain/rainbond/builder/cloudos"
 	"github.com/goodrain/rainbond/builder/parser"
@@ -61,7 +59,6 @@ type BackupAPPRestore struct {
 	//serviceChange  key: oldServiceID
 	serviceChange map[string]*Info
 	volumeIDMap   map[uint]uint
-	etcdcli       *clientv3.Client
 
 	S3Config struct {
 		Provider   string `json:"provider"`
@@ -92,7 +89,6 @@ func BackupAPPRestoreCreater(in []byte, m *exectorManager) (TaskWorker, error) {
 		Logger:        logger,
 		EventID:       eventID,
 		ImageClient:   m.imageClient,
-		etcdcli:       m.EtcdCli,
 		serviceChange: make(map[string]*Info, 0),
 		volumeIDMap:   make(map[uint]uint),
 	}
@@ -820,7 +816,8 @@ func (b *BackupAPPRestore) saveResult(status, message string) {
 		CacheDir:      b.cacheDir,
 	}
 	body, _ := ffjson.Marshal(rr)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	b.etcdcli.Put(ctx, "/rainbond/backup_restore/"+rr.RestoreID, string(body))
+	err := db.GetManager().KeyValueDao().Put("/rainbond/backup_restore/"+rr.RestoreID, string(body))
+	if err != nil {
+		logrus.Errorf("save restore result error %s", err.Error())
+	}
 }

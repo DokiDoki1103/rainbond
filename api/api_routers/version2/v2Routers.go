@@ -65,6 +65,7 @@ func (v2 *V2) Routes() chi.Router {
 	r.Get("/instances/monitor", controller.GetManager().InstancesMonitor)
 	r.Mount("/helm", v2.helmRouter())
 	r.Mount("/proxy-pass", v2.proxyRoute())
+	r.Get("/pods/logs", controller.GetManager().PodLogs)
 
 	return r
 }
@@ -417,6 +418,7 @@ func (v2 *V2) serviceRouter() chi.Router {
 	r.Post("/app-restore/plugins", middleware.WrapEL(controller.GetManager().RestorePlugins, dbmodel.TargetTypeService, "app-restore-plugins", dbmodel.SYNEVENTTYPE, false))
 
 	r.Get("/pods/{pod_name}/detail", controller.GetManager().PodDetail)
+	r.Get("/pods/{pod_name}/logs", controller.GetManager().PodLogs)
 
 	// autoscaler
 	r.Post("/xparules", middleware.WrapEL(controller.GetManager().AutoscalerRules, dbmodel.TargetTypeService, "add-app-autoscaler-rule", dbmodel.SYNEVENTTYPE, false))

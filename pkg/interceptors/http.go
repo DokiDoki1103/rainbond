@@ -19,15 +19,17 @@
 package interceptors
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/goodrain/rainbond/pkg/component/etcd"
 	"github.com/goodrain/rainbond/pkg/component/grpc"
 	"github.com/goodrain/rainbond/pkg/component/hubregistry"
 	"github.com/goodrain/rainbond/pkg/component/mq"
 	"github.com/goodrain/rainbond/pkg/component/prom"
 	"net/http"
+	"runtime/debug"
 	"strings"
+	"time"
 )
 
 // Recoverer -
@@ -35,6 +37,7 @@ func Recoverer(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rvr := recover(); rvr != nil && rvr != http.ErrAbortHandler {
+				debug.PrintStack()
 				handleServiceUnavailable(w, r)
 			}
 		}()
@@ -60,9 +63,7 @@ func handleServiceUnavailable(w http.ResponseWriter, r *http.Request) {
 	// Additional information about why etcd service is not available
 	errorMessage := "部分服务不可用"
 
-	if etcd.Default().EtcdClient == nil {
-		errorMessage = "Etcd 服务不可用"
-	} else if grpc.Default().StatusClient == nil {
+	if grpc.Default().StatusClient == nil {
 		errorMessage = "worker 服务不可用"
 	} else if hubregistry.Default().RegistryCli == nil {
 		errorMessage = "私有镜像仓库 服务不可用"
@@ -91,4 +92,26 @@ func handleServiceUnavailable(w http.ResponseWriter, r *http.Request) {
 
 	// Write the JSON response to the client
 	_, _ = w.Write(responseJSON)
+}
+
+// Timeout -
+func Timeout(timeout time.Duration) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			if strings.Contains(r.URL.Path, "logs") {
+				timeout = 1 * time.Hour
+			}
+			ctx, cancel := context.WithTimeout(r.Context(), timeout)
+			defer func() {
+				cancel()
+				if ctx.Err() == context.DeadlineExceeded {
+					w.WriteHeader(http.StatusGatewayTimeout)
+				}
+			}()
+
+			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(fn)
+	}
 }

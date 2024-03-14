@@ -19,8 +19,11 @@
 package conversion
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	v2 "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/apis/config/v2"
+	"github.com/goodrain/rainbond/otherclient"
 	kubevirtv1 "kubevirt.io/api/core/v1"
 	"net"
 	"os"
@@ -47,12 +50,58 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+func updateAPISixRoute(as *v1.AppService) error {
+	// 找到这个端口对应的真实的k8s svc的 namne
+	ports, err := db.GetManager().TenantServicesPortDao().GetOuterPorts(as.ServiceID)
+	if err != nil {
+		return err
+	}
+	apisixRoutes, err1 := otherclient.GetAPISixClient().ApisixV2().ApisixRoutes(as.GetNamespace()).List(context.Background(), metav1.ListOptions{
+		LabelSelector: "service_alias=" + as.ServiceAlias,
+	})
+
+	if err1 != nil {
+		logrus.Errorf("get apisix route error: %v", err1)
+		return err
+	}
+	for _, port := range ports {
+		// 重新绑定他的后端地址
+		var backends []v2.ApisixRouteHTTPBackend
+		for _, apisixroute := range apisixRoutes.Items {
+			for _, backend := range apisixroute.Spec.HTTP[0].Backends {
+				if backend.ServicePort.IntVal == int32(port.ContainerPort) {
+					backend.ServiceName = port.K8sServiceName
+					backends = append(backends, backend)
+				}
+			}
+			get, err := otherclient.GetAPISixClient().ApisixV2().ApisixRoutes(as.GetNamespace()).Get(context.Background(), apisixroute.Name, metav1.GetOptions{})
+			if err != nil {
+				logrus.Errorf("get apisix route error: %v", err)
+				continue
+			}
+			get.Spec.HTTP[0].Backends = backends //重新定义的后端地址
+			_, err2 := otherclient.GetAPISixClient().ApisixV2().ApisixRoutes(as.GetNamespace()).Update(context.Background(), get, metav1.UpdateOptions{})
+			if err2 != nil {
+				logrus.Errorf("update apisix route error: %v", err)
+				continue
+			}
+		}
+	}
+	return nil
+}
+
 // TenantServiceVersion service deploy version conv. define pod spec
 func TenantServiceVersion(as *v1.AppService, dbmanager db.Manager) error {
 	version, err := dbmanager.VersionInfoDao().GetVersionByDeployVersion(as.DeployVersion, as.ServiceID)
 	if err != nil {
 		return fmt.Errorf("get service deploy version %s failure %s", as.DeployVersion, err.Error())
 	}
+
+	updateAPISixRouteErr := updateAPISixRoute(as)
+	if updateAPISixRouteErr != nil {
+		logrus.Errorf("update apisix route error: %v", updateAPISixRouteErr)
+	}
+
 	envVarSecrets := as.GetEnvVarSecrets(true)
 	logrus.Debugf("[getMainContainer] %d secrets as envs were found.", len(envVarSecrets))
 
@@ -466,9 +515,9 @@ func createEnv(as *v1.AppService, dbmanager db.Manager, envVarSecrets []*corev1.
 				startupSequenceDependencies = append(startupSequenceDependencies, sa.ServiceAlias)
 			}
 		}
-		envs = append(envs, corev1.EnvVar{Name: "DEPEND_SERVICE", Value: Depend})
-		envs = append(envs, corev1.EnvVar{Name: "DEPEND_SERVICE_COUNT", Value: strconv.Itoa(len(serviceAliases))})
-		envs = append(envs, corev1.EnvVar{Name: "STARTUP_SEQUENCE_DEPENDENCIES", Value: strings.Join(startupSequenceDependencies, ",")})
+		envs = append(envs, corev1.EnvVar{Name: "_DEPEND_SERVICE", Value: Depend})
+		envs = append(envs, corev1.EnvVar{Name: "_DEPEND_SERVICE_COUNT", Value: strconv.Itoa(len(serviceAliases))})
+		envs = append(envs, corev1.EnvVar{Name: "_STARTUP_SEQUENCE_DEPENDENCIES", Value: strings.Join(startupSequenceDependencies, ",")})
 
 		if as.GovernanceMode == model.GovernanceModeBuildInServiceMesh {
 			as.NeedProxy = true
@@ -503,7 +552,7 @@ func createEnv(as *v1.AppService, dbmanager db.Manager, envVarSecrets []*corev1.
 			}
 			Depend += fmt.Sprintf("%s:%s", sa.ServiceAlias, sa.ServiceID)
 		}
-		envs = append(envs, corev1.EnvVar{Name: "REVERSE_DEPEND_SERVICE", Value: Depend})
+		envs = append(envs, corev1.EnvVar{Name: "_REVERSE_DEPEND_SERVICE", Value: Depend})
 	}
 
 	//set app port and net env
@@ -525,13 +574,13 @@ func createEnv(as *v1.AppService, dbmanager db.Manager, envVarSecrets []*corev1.
 			}
 			portStr += fmt.Sprintf("%d", port.ContainerPort)
 		}
-		envs = append(envs, corev1.EnvVar{Name: "PORT", Value: strconv.Itoa(minPort)})
-		envs = append(envs, corev1.EnvVar{Name: "PROTOCOL", Value: protocol})
+		envs = append(envs, corev1.EnvVar{Name: "_PORT", Value: strconv.Itoa(minPort)})
+		envs = append(envs, corev1.EnvVar{Name: "_PROTOCOL", Value: protocol})
 		menvs := convertRulesToEnvs(as, dbmanager, ports)
 		if len(envs) > 0 {
 			envs = append(envs, menvs...)
 		}
-		envs = append(envs, corev1.EnvVar{Name: "MONITOR_PORT", Value: portStr})
+		envs = append(envs, corev1.EnvVar{Name: "_MONITOR_PORT", Value: portStr})
 	}
 
 	//set app custom envs
@@ -547,30 +596,28 @@ func createEnv(as *v1.AppService, dbmanager db.Manager, envVarSecrets []*corev1.
 	}
 
 	//set default env
-	envs = append(envs, corev1.EnvVar{Name: "NAMESPACE", Value: as.GetNamespace()})
-	envs = append(envs, corev1.EnvVar{Name: "TENANT_ID", Value: as.TenantID})
-	envs = append(envs, corev1.EnvVar{Name: "SERVICE_ID", Value: as.ServiceID})
+	envs = append(envs, corev1.EnvVar{Name: "_NAMESPACE", Value: as.GetNamespace()})
+	envs = append(envs, corev1.EnvVar{Name: "_TENANT_ID", Value: as.TenantID})
+	envs = append(envs, corev1.EnvVar{Name: "_SERVICE_ID", Value: as.ServiceID})
 	if envutil.IsCustomMemory(as.ContainerMemory) {
 		envs = append(envs, corev1.EnvVar{Name: "CUSTOM_MEMORY_SIZE", Value: strconv.Itoa(as.ContainerMemory)})
 	} else {
 		envs = append(envs, corev1.EnvVar{Name: "MEMORY_SIZE", Value: envutil.GetMemoryType(as.ContainerMemory)})
 	}
-	envs = append(envs, corev1.EnvVar{Name: "SERVICE_NAME", Value: as.GetK8sWorkloadName()})
-	envs = append(envs, corev1.EnvVar{Name: "TEAM_NAME", Value: as.TenantName})
-	envs = append(envs, corev1.EnvVar{Name: "K8S_APP", Value: as.K8sApp})
-	envs = append(envs, corev1.EnvVar{Name: "SERVICE_ALIAS", Value: as.ServiceAlias})
-	envs = append(envs, corev1.EnvVar{Name: "SERVICE_POD_NUM", Value: strconv.Itoa(as.Replicas)})
-	envs = append(envs, corev1.EnvVar{Name: "HOST_IP", ValueFrom: &corev1.EnvVarSource{
+	envs = append(envs, corev1.EnvVar{Name: "_SERVICE_NAME", Value: as.GetK8sWorkloadName()})
+	envs = append(envs, corev1.EnvVar{Name: "_SERVICE_ALIAS", Value: as.ServiceAlias})
+	envs = append(envs, corev1.EnvVar{Name: "_SERVICE_POD_NUM", Value: strconv.Itoa(as.Replicas)})
+	envs = append(envs, corev1.EnvVar{Name: "_HOST_IP", ValueFrom: &corev1.EnvVarSource{
 		FieldRef: &corev1.ObjectFieldSelector{
 			FieldPath: "status.hostIP",
 		},
 	}})
-	envs = append(envs, corev1.EnvVar{Name: "POD_IP", ValueFrom: &corev1.EnvVarSource{
+	envs = append(envs, corev1.EnvVar{Name: "_POD_IP", ValueFrom: &corev1.EnvVarSource{
 		FieldRef: &corev1.ObjectFieldSelector{
 			FieldPath: "status.podIP",
 		},
 	}})
-	envs = append(envs, corev1.EnvVar{Name: "POD_NAME", ValueFrom: &corev1.EnvVarSource{
+	envs = append(envs, corev1.EnvVar{Name: "_POD_NAME", ValueFrom: &corev1.EnvVarSource{
 		FieldRef: &corev1.ObjectFieldSelector{
 			FieldPath: "metadata.name",
 		},

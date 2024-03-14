@@ -39,6 +39,7 @@ type Manager interface {
 	VolumeTypeDao() dao.VolumeTypeDao
 	LicenseDao() dao.LicenseDao
 	AppDao() dao.AppDao
+	KeyValueDao() dao.KeyValueDao
 	ApplicationDao() dao.ApplicationDao
 	ApplicationDaoTransactions(db *gorm.DB) dao.ApplicationDao
 	AppConfigGroupDao() dao.AppConfigGroupDao
@@ -170,8 +171,9 @@ func CreateManager(config config.Config) (err error) {
 	if _, ok := supportDrivers[config.DBType]; !ok {
 		return fmt.Errorf("DB drivers: %s not supported", config.DBType)
 	}
-
+	logrus.Info("db manager initialization starting...")
 	for {
+
 		defaultManager, err = mysql.CreateManager(config)
 		if err == nil {
 			logrus.Infof("db manager is ready")
@@ -180,8 +182,6 @@ func CreateManager(config config.Config) (err error) {
 		logrus.Errorf("get db manager failed, try time is %d,%s", 10, err.Error())
 		time.Sleep(10 * time.Second)
 	}
-	//TODO:etcd db plugin
-	//defaultManager, err = etcd.CreateManager(config)
 	return
 }
 

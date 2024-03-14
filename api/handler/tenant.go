@@ -33,7 +33,7 @@ import (
 
 	"github.com/goodrain/rainbond/api/client/prometheus"
 	"github.com/goodrain/rainbond/api/model"
-	api_model "github.com/goodrain/rainbond/api/model"
+	apimodel "github.com/goodrain/rainbond/api/model"
 	"github.com/goodrain/rainbond/api/util"
 	"github.com/goodrain/rainbond/api/util/bcode"
 	"github.com/goodrain/rainbond/cmd/api/option"
@@ -92,8 +92,8 @@ func CreateTenManager(mqc mqclient.MQClient, statusCli *client.AppRuntimeSyncCli
 }
 
 // BindTenantsResource query tenant resource used and sort
-func (t *TenantAction) BindTenantsResource(source []*dbmodel.Tenants) api_model.TenantList {
-	var list api_model.TenantList
+func (t *TenantAction) BindTenantsResource(source []*dbmodel.Tenants) apimodel.TenantList {
+	var list apimodel.TenantList
 	var resources = make(map[string]*pb.TenantResource, len(source))
 	if len(source) == 1 {
 		re, err := t.statusCli.GetTenantResource(source[0].UUID)
@@ -113,7 +113,7 @@ func (t *TenantAction) BindTenantsResource(source []*dbmodel.Tenants) api_model.
 		}
 	}
 	for i, ten := range source {
-		var item = &api_model.TenantAndResource{
+		var item = &apimodel.TenantAndResource{
 			Tenants: *source[i],
 		}
 		re := resources[ten.UUID]
@@ -219,7 +219,7 @@ func (t *TenantAction) DeleteTenant(ctx context.Context, tenantID string) error 
 }
 
 // TotalMemCPU StatsMemCPU
-func (t *TenantAction) TotalMemCPU(services []*dbmodel.TenantServices) (*api_model.StatsInfo, error) {
+func (t *TenantAction) TotalMemCPU(services []*dbmodel.TenantServices) (*apimodel.StatsInfo, error) {
 	cpus := 0
 	mem := 0
 	for _, service := range services {
@@ -227,7 +227,7 @@ func (t *TenantAction) TotalMemCPU(services []*dbmodel.TenantServices) (*api_mod
 		cpus += service.ContainerCPU
 		mem += service.ContainerMemory
 	}
-	si := &api_model.StatsInfo{
+	si := &apimodel.StatsInfo{
 		CPU: cpus,
 		MEM: mem,
 	}
@@ -267,7 +267,7 @@ func (t *TenantAction) GetTenantsByUUID(uuid string) (*dbmodel.Tenants, error) {
 }
 
 // StatsMemCPU StatsMemCPU
-func (t *TenantAction) StatsMemCPU(services []*dbmodel.TenantServices) (*api_model.StatsInfo, error) {
+func (t *TenantAction) StatsMemCPU(services []*dbmodel.TenantServices) (*apimodel.StatsInfo, error) {
 	cpus := 0
 	mem := 0
 	for _, service := range services {
@@ -278,7 +278,7 @@ func (t *TenantAction) StatsMemCPU(services []*dbmodel.TenantServices) (*api_mod
 		cpus += service.ContainerCPU
 		mem += service.ContainerMemory
 	}
-	si := &api_model.StatsInfo{
+	si := &apimodel.StatsInfo{
 		CPU: cpus,
 		MEM: mem,
 	}
@@ -295,7 +295,7 @@ type QueryResult struct {
 }
 
 // GetTenantsResources Gets the resource usage of the specified tenant.
-func (t *TenantAction) GetTenantsResources(ctx context.Context, tr *api_model.TenantResources) (map[string]map[string]interface{}, error) {
+func (t *TenantAction) GetTenantsResources(ctx context.Context, tr *apimodel.TenantResources) (map[string]map[string]interface{}, error) {
 	ids, err := db.GetManager().TenantDao().GetTenantIDsByNames(tr.Body.TenantNames)
 	if err != nil {
 		return nil, err
@@ -427,6 +427,7 @@ type PodResourceInformation struct {
 	StorageEphemeral int64
 }
 
+// ClusterResourceStats cluster resource stats
 type NodeGPU struct {
 	NodeName string
 	GPUCount int64
@@ -560,7 +561,7 @@ func (t *TenantAction) GetAllocatableResources(ctx context.Context) (*ClusterRes
 }
 
 // GetServicesResources Gets the resource usage of the specified service.
-func (t *TenantAction) GetServicesResources(tr *api_model.ServicesResources) (re map[string]map[string]interface{}, err error) {
+func (t *TenantAction) GetServicesResources(tr *apimodel.ServicesResources) (re map[string]map[string]interface{}, err error) {
 	status := t.statusCli.GetStatuss(strings.Join(tr.Body.ServiceIDs, ","))
 	var running, closed []string
 	for k, v := range status {

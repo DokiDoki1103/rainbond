@@ -21,7 +21,7 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/coreos/etcd/clientv3"
+	apisixversioned "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/client/clientset/versioned"
 	apimodel "github.com/goodrain/rainbond/api/model"
 	apiutil "github.com/goodrain/rainbond/api/util"
 	"github.com/goodrain/rainbond/api/util/bcode"
@@ -44,36 +44,63 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // GatewayAction -
 type GatewayAction struct {
 	dbmanager     db.Manager
 	mqclient      client.MQClient
-	etcdCli       *clientv3.Client
 	gatewayClient *gateway.GatewayV1beta1Client
 	kubeClient    kubernetes.Interface
+	kubeClientset *kubernetes.Clientset
 	config        *rest.Config
+	apisixClient  *apisixversioned.Clientset
 }
 
 // CreateGatewayManager creates gateway manager.
 func CreateGatewayManager(
 	dbmanager db.Manager,
 	mqclient client.MQClient,
-	etcdCli *clientv3.Client,
 	gatewayClient *gateway.GatewayV1beta1Client,
 	kubeClient kubernetes.Interface,
+	kubeClientset *kubernetes.Clientset,
 	config *rest.Config,
+	apisixClient *apisixversioned.Clientset,
 ) *GatewayAction {
 	return &GatewayAction{
 		dbmanager:     dbmanager,
 		mqclient:      mqclient,
-		etcdCli:       etcdCli,
 		gatewayClient: gatewayClient,
 		kubeClient:    kubeClient,
+		kubeClientset: kubeClientset,
 		config:        config,
+		apisixClient:  apisixClient,
 	}
+}
+
+// GetClient -
+func (g *GatewayAction) GetClient() *apisixversioned.Clientset {
+	return g.apisixClient
+}
+
+// GetK8sClient -
+func (g *GatewayAction) GetK8sClient() kubernetes.Interface {
+	return g.kubeClient
+}
+
+// CreateCert -
+func (g *GatewayAction) CreateCert(namespace, domain string) error {
+	secretName := strings.Replace(domain, ".", "-", -1)
+
+	// Generate self-signed certificate
+	cert, certKey, err := generateSelfSignedCertificate(domain)
+	if err != nil {
+		logrus.Errorf("Error generating self-signed certificate: %v", err)
+		return err
+	}
+
+	// Create Kubernetes Secret
+	return createK8sSecret(g.kubeClientset, namespace, secretName, cert, certKey)
 }
 
 // BatchGetGatewayHTTPRoute batch get gateway http route
@@ -1294,36 +1321,36 @@ func (g *GatewayAction) GetAvailablePort(ip string, lock bool) (int, error) {
 	for _, p := range roles {
 		ports = append(ports, p.Port)
 	}
-	resp, err := clientv3.KV(g.etcdCli).Get(context.TODO(), "/rainbond/gateway/lockports", clientv3.WithPrefix())
-	if err != nil {
-		logrus.Info("get lock ports failed")
-	}
-	for _, etcdValue := range resp.Kvs {
-		port, err := strconv.Atoi(string(etcdValue.Value))
-		if err != nil {
-			continue
-		}
-		ports = append(ports, port)
-	}
-	port := selectAvailablePort(ports)
-	if port != 0 {
-		if lock {
-			lease := clientv3.NewLease(g.etcdCli)
-			leaseResp, err := lease.Grant(context.Background(), 120)
-			if err != nil {
-				logrus.Info("set lease failed")
-				return port, nil
-			}
-			lockPortKey := fmt.Sprintf("/rainbond/gateway/lockports/%d", port)
-			_, err = g.etcdCli.Put(context.Background(), lockPortKey, fmt.Sprintf("%d", port), clientv3.WithLease(leaseResp.ID))
-			if err != nil {
-				logrus.Infof("set lock port key %s failed", lockPortKey)
-				return port, nil
-			}
-			logrus.Infof("select gateway port %d, lock it 2 min", port)
-		}
-		return port, nil
-	}
+	//resp, err := clientv3.KV(g.etcdCli).Get(context.TODO(), "/rainbond/gateway/lockports", clientv3.WithPrefix())
+	//if err != nil {
+	//	logrus.Info("get lock ports failed")
+	//}
+	//for _, etcdValue := range resp.Kvs {
+	//	port, err := strconv.Atoi(string(etcdValue.Value))
+	//	if err != nil {
+	//		continue
+	//	}
+	//	ports = append(ports, port)
+	//}
+	//port := selectAvailablePort(ports)
+	//if port != 0 {
+	//	if lock {
+	//		lease := clientv3.NewLease(g.etcdCli)
+	//		leaseResp, err := lease.Grant(context.Background(), 120)
+	//		if err != nil {
+	//			logrus.Info("set lease failed")
+	//			return port, nil
+	//		}
+	//		lockPortKey := fmt.Sprintf("/rainbond/gateway/lockports/%d", port)
+	//		_, err = g.etcdCli.Put(context.Background(), lockPortKey, fmt.Sprintf("%d", port), clientv3.WithLease(leaseResp.ID))
+	//		if err != nil {
+	//			logrus.Infof("set lock port key %s failed", lockPortKey)
+	//			return port, nil
+	//		}
+	//		logrus.Infof("select gateway port %d, lock it 2 min", port)
+	//	}
+	//	return port, nil
+	//}
 	return 0, fmt.Errorf("no more lb port can be use with ip %s", ip)
 }
 
@@ -1472,6 +1499,26 @@ func (g *GatewayAction) RuleConfig(req *apimodel.RuleConfigReq) error {
 		})
 	}
 
+	// response headers
+	responseHeaders := make(map[string]string)
+	for _, item := range req.Body.ResponseHeaders {
+		if strings.TrimSpace(item.Key) == "" {
+			continue
+		}
+		if strings.TrimSpace(item.Value) == "" {
+			item.Value = "empty"
+		}
+		// filter same key
+		responseHeaders["resp-header-"+item.Key] = item.Value
+	}
+	for k, v := range responseHeaders {
+		configs = append(configs, &model.GwRuleConfig{
+			RuleID: req.RuleID,
+			Key:    k,
+			Value:  v,
+		})
+	}
+
 	rule, err := g.dbmanager.HTTPRuleDao().GetHTTPRuleByID(req.RuleID)
 	if err != nil {
 		return err
@@ -1581,15 +1628,14 @@ func (g *GatewayAction) GetGatewayIPs() []IPAndAvailablePort {
 		IP:            "0.0.0.0",
 		AvailablePort: defaultAvailablePort,
 	}}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	res, err := clientv3.NewKV(g.etcdCli).Get(ctx, "/rainbond/gateway/ips", clientv3.WithPrefix())
-	if err != nil {
+	res, err := db.GetManager().KeyValueDao().WithPrefix("/rainbond/gateway/ips")
+	if err != nil || len(res) == 0 {
 		return defaultIps
 	}
-	gatewayIps := []string{}
-	for _, v := range res.Kvs {
-		gatewayIps = append(gatewayIps, string(v.Value))
+
+	var gatewayIps = make([]string, 0)
+	for _, v := range res {
+		gatewayIps = append(gatewayIps, v.V)
 	}
 	sort.Strings(gatewayIps)
 	for _, v := range gatewayIps {

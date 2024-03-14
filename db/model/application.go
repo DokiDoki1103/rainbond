@@ -125,6 +125,11 @@ func (k *K8sResource) TableName() string {
 	return "k8s_resources"
 }
 
+// TableName return tableName "app_gray_release"
+func (k *AppGrayRelease) TableName() string {
+	return "app_gray_release"
+}
+
 // AppGrayRelease -
 type AppGrayRelease struct {
 	Model
@@ -136,11 +141,6 @@ type AppGrayRelease struct {
 	GrayStrategy     string `gorm:"column:gray_strategy;type:longtext" json:"gray_strategy"`
 	Status           bool   `gorm:"column:status" json:"status"`
 	TraceType        string `gorm:"column:trace_type" json:"trace_type"`
-}
-
-// TableName return tableName "app_gray_release"
-func (k *AppGrayRelease) TableName() string {
-	return "app_gray_release"
 }
 
 // EnterpriseLanguageVersion language model
