@@ -494,7 +494,7 @@ func HandleDetailResource(namespace string, k8sResourceObjects []apimodel.K8sRes
 }
 
 // ResourceCreate -
-func (c *clusterAction) ResourceCreate(buildResource api_model.BuildResource, namespace string) (*unstructured.Unstructured, error) {
+func (c *clusterAction) ResourceCreate(buildResource apimodel.BuildResource, namespace string) (*unstructured.Unstructured, error) {
 	logrus.Infof("begin ResourceCreate function")
 	mapping, err := c.mapper.RESTMapping(buildResource.GVK.GroupKind(), buildResource.GVK.Version)
 	if err != nil {

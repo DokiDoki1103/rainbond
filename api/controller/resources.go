@@ -908,7 +908,7 @@ func (t *TenantStruct) CloseSecurityContext(w http.ResponseWriter, r *http.Reque
 
 // OpenSecurityContext -
 func (t *TenantStruct) OpenSecurityContext(w http.ResponseWriter, r *http.Request) {
-	var ss api_model.ServiceSecurityContext
+	var ss apimodel.ServiceSecurityContext
 	if !httputil.ValidatorRequestStructAndErrorResponse(r, w, &ss, nil) {
 		return
 	}
