@@ -307,6 +307,8 @@ type PodInterface interface {
 	PodLogs(w http.ResponseWriter, r *http.Request)
 	InstancesMonitor(w http.ResponseWriter, r *http.Request)
 	GetPodVolume(w http.ResponseWriter, r *http.Request)
+	SystemPodLogs(w http.ResponseWriter, r *http.Request)
+	SystemPodDetail(w http.ResponseWriter, r *http.Request)
 }
 
 // RegistryAuthSecretInterface registry auth secret interface
