@@ -3,7 +3,9 @@ package handler
 import (
 	"context"
 	"fmt"
+	rainbondv1alpha1 "github.com/goodrain/rainbond-operator/api/v1alpha1"
 	"github.com/goodrain/rainbond-operator/util/rbdutil"
+	"github.com/goodrain/rainbond/config/configs"
 	"github.com/goodrain/rainbond/worker/appm/conversion"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
@@ -18,6 +20,7 @@ import (
 	"github.com/goodrain/rainbond/api/util/bcode"
 	"github.com/goodrain/rainbond/db"
 	dbmodel "github.com/goodrain/rainbond/db/model"
+	"github.com/goodrain/rainbond/grctl/clients"
 	mqclient "github.com/goodrain/rainbond/mq/client"
 	"github.com/goodrain/rainbond/pkg/apis/rainbond/v1alpha1"
 	"github.com/goodrain/rainbond/pkg/generated/clientset/versioned"
@@ -36,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apiserver/pkg/util/flushwriter"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -83,15 +87,17 @@ type ClusterHandler interface {
 	UpdateAbility(abilityID string, ability *unstructured.Unstructured) error
 	GenerateAbilityID(ability *unstructured.Unstructured) string
 	ListRainbondComponents(ctx context.Context) (res []*model.RainbondComponent, err error)
+	GetClusterRegionStatus() (map[string]interface{}, error)
 }
 
 // NewClusterHandler -
-func NewClusterHandler(clientset *kubernetes.Clientset, RbdNamespace, grctlImage string, config *rest.Config, mapper meta.RESTMapper, prometheusCli prometheus.Interface, rainbondClient versioned.Interface, statusCli *workerclient.AppRuntimeSyncClient, dynamicClient dynamic.Interface, gatewayClient *gateway.GatewayV1beta1Client, mqclient mqclient.MQClient) ClusterHandler {
+func NewClusterHandler(k8sClient client.Client, clientset *kubernetes.Clientset, RbdNamespace, grctlImage string, config *rest.Config, mapper meta.RESTMapper, prometheusCli prometheus.Interface, rainbondClient versioned.Interface, statusCli *workerclient.AppRuntimeSyncClient, dynamicClient dynamic.Interface, gatewayClient *gateway.GatewayV1beta1Client, mqclient mqclient.MQClient) ClusterHandler {
 	return &clusterAction{
 		namespace:      RbdNamespace,
 		clientset:      clientset,
 		config:         config,
 		mapper:         mapper,
+		client:         k8sClient,
 		grctlImage:     grctlImage,
 		prometheusCli:  prometheusCli,
 		rainbondClient: rainbondClient,
@@ -126,7 +132,7 @@ type nodePod struct {
 	EphemeralStorage prometheus.MetricValue
 }
 
-//GetClusterInfo -
+// GetClusterInfo -
 func (c *clusterAction) GetClusterInfo(ctx context.Context) (*model.ClusterResource, error) {
 	timeout, _ := strconv.Atoi(os.Getenv("CLUSTER_INFO_CACHE_TIME"))
 	if timeout == 0 {
@@ -410,7 +416,7 @@ func (c *clusterAction) listPods(ctx context.Context, nodeName string) (pods []c
 	return podList.Items, nil
 }
 
-//MavenSetting maven setting
+// MavenSetting maven setting
 type MavenSetting struct {
 	Name       string `json:"name" validate:"required"`
 	CreateTime string `json:"create_time"`
@@ -419,7 +425,7 @@ type MavenSetting struct {
 	IsDefault  bool   `json:"is_default"`
 }
 
-//MavenSettingList maven setting list
+// MavenSettingList maven setting list
 func (c *clusterAction) MavenSettingList(ctx context.Context) (re []MavenSetting) {
 	cms, err := c.clientset.CoreV1().ConfigMaps(c.namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "configtype=mavensetting",
@@ -443,7 +449,7 @@ func (c *clusterAction) MavenSettingList(ctx context.Context) (re []MavenSetting
 	return
 }
 
-//MavenSettingAdd maven setting add
+// MavenSettingAdd maven setting add
 func (c *clusterAction) MavenSettingAdd(ctx context.Context, ms *MavenSetting) *util.APIHandleError {
 	config := &corev1.ConfigMap{}
 	config.Name = ms.Name
@@ -471,7 +477,7 @@ func (c *clusterAction) MavenSettingAdd(ctx context.Context, ms *MavenSetting) *
 	return nil
 }
 
-//MavenSettingUpdate maven setting file update
+// MavenSettingUpdate maven setting file update
 func (c *clusterAction) MavenSettingUpdate(ctx context.Context, ms *MavenSetting) *util.APIHandleError {
 	sm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(ctx, ms.Name, metav1.GetOptions{})
 	if err != nil {
@@ -498,7 +504,7 @@ func (c *clusterAction) MavenSettingUpdate(ctx context.Context, ms *MavenSetting
 	return nil
 }
 
-//MavenSettingDelete maven setting file delete
+// MavenSettingDelete maven setting file delete
 func (c *clusterAction) MavenSettingDelete(ctx context.Context, name string) *util.APIHandleError {
 	err := c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(ctx, name, metav1.DeleteOptions{})
 	if err != nil {
@@ -511,7 +517,7 @@ func (c *clusterAction) MavenSettingDelete(ctx context.Context, name string) *ut
 	return nil
 }
 
-//MavenSettingDetail maven setting file delete
+// MavenSettingDetail maven setting file delete
 func (c *clusterAction) MavenSettingDetail(ctx context.Context, name string) (*MavenSetting, *util.APIHandleError) {
 	sm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
@@ -547,7 +553,7 @@ func (c *clusterAction) GetExceptionNodeInfo(ctx context.Context) ([]*model.Exce
 	return exceptionNodes, nil
 }
 
-//BatchGetGateway batch get gateway
+// BatchGetGateway batch get gateway
 func (c *clusterAction) BatchGetGateway(ctx context.Context) ([]*model.GatewayResource, *util.APIHandleError) {
 	gateways, err := c.gatewayClient.Gateways(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -651,7 +657,7 @@ func (c *clusterAction) GetNamespace(ctx context.Context, content string) ([]str
 	return *namespaces, nil
 }
 
-//MergeMap map去重合并
+// MergeMap map去重合并
 func MergeMap(map1 map[string][]string, map2 map[string][]string) map[string][]string {
 	for k, v := range map1 {
 		if _, ok := map2[k]; ok {
@@ -1039,4 +1045,63 @@ func (c *clusterAction) HandlePlugins() (plugins []*model.RainbondPlugins, err e
 		})
 	}
 	return plugins, nil
+}
+
+func (c *clusterAction) GetClusterRegionStatus() (map[string]interface{}, error) {
+	secret := &corev1.Secret{}
+	if err := c.client.Get(context.Background(), types.NamespacedName{Namespace: c.namespace, Name: "rbd-api-server-cert"}, secret); err != nil {
+		return nil, err
+	}
+	var cluster rainbondv1alpha1.RainbondCluster
+	if err := clients.RainbondKubeClient.Get(context.Background(), types.NamespacedName{Namespace: c.namespace, Name: "rainbondcluster"}, &cluster); err != nil {
+		return nil, err
+	}
+	var gatewayIngressIP string
+	if len(cluster.Spec.GatewayIngressIPs) > 0 && cluster.Spec.GatewayIngressIPs[0] != "" {
+		gatewayIngressIP = cluster.Spec.GatewayIngressIPs[0]
+	} else if len(cluster.Spec.NodesForGateway) > 0 {
+		gatewayIngressIP = cluster.Spec.NodesForGateway[0].InternalIP
+	}
+
+	if secret != nil {
+		var ips = strings.ReplaceAll(strings.Join(cluster.GatewayIngressIPs(), "-"), ".", "_")
+		if availableips, ok := secret.Labels["availableips"]; ok && availableips == ips {
+			caPem := secret.Data["ca.pem"]
+			clientPem := secret.Data["server.pem"]
+			clientKey := secret.Data["server.key.pem"]
+			regionInfo := make(map[string]interface{})
+			regionInfo["regionName"] = time.Now().Unix()
+			regionInfo["regionType"] = []string{"custom"}
+			regionInfo["sslCaCert"] = string(caPem)
+			regionInfo["keyFile"] = string(clientKey)
+			regionInfo["certFile"] = string(clientPem)
+			regionInfo["url"] = fmt.Sprintf("https://%s:%s", gatewayIngressIP, "8443")
+			regionInfo["wsUrl"] = fmt.Sprintf("ws://%s:%s", gatewayIngressIP, "6060")
+			regionInfo["httpDomain"] = cluster.Spec.SuffixHTTPHost
+			regionInfo["tcpDomain"] = cluster.GatewayIngressIP()
+			regionInfo["desc"] = "Helm"
+			regionInfo["regionAlias"] = "对接集群"
+			regionInfo["region-name"] = configs.Default().APIConfig.RegionName
+			regionInfo["region-sn"] = configs.Default().APIConfig.RegionSN
+			regionInfo["provider"] = "helm"
+			regionInfo["providerClusterId"] = ""
+			regionInfo["token"] = os.Getenv("HELM_TOKEN")
+			if os.Getenv("ENTERPRISE_ID") != "" {
+				regionInfo["enterpriseId"] = os.Getenv("ENTERPRISE_ID")
+			}
+			if os.Getenv("CLOUD_SERVER") != "" {
+				cloud := os.Getenv("CLOUD_SERVER")
+				switch cloud {
+				case "aliyun":
+					regionInfo["regionType"] = []string{"aliyun"}
+				case "huawei":
+					regionInfo["regionType"] = []string{"huawei"}
+				case "tencent":
+					regionInfo["regionType"] = []string{"tencent"}
+				}
+			}
+			return regionInfo, nil
+		}
+	}
+	return nil, fmt.Errorf("get rbd-api-server-cert secret is nil")
 }

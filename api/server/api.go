@@ -178,6 +178,7 @@ func (m *Manager) Run() {
 		websocketRouter.Mount("/package_build", websocket.PackageBuildRoutes())
 		websocketRouter.Mount("/v2/file-operate", websocket.FileOperateRoutes())
 		websocketRouter.Mount("/lg_pack_operate", websocket.LongVersionRoutes())
+		websocketRouter.Mount("/helm_install", websocket.HelmInstallRegionStatus())
 		if m.conf.WebsocketSSL {
 			logrus.Infof("websocket listen on (HTTPs) %s", m.conf.WebsocketAddr)
 			logrus.Fatal(http.ListenAndServeTLS(m.conf.WebsocketAddr, m.conf.WebsocketCertFile, m.conf.WebsocketKeyFile, websocketRouter))
