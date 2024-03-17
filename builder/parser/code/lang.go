@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/goodrain/rainbond/util"
 	"path"
+	"strings"
 )
 
 func init() {
@@ -130,7 +131,7 @@ var OSS Lang = "OSS"
 
 // GetLangType check code lang
 func GetLangType(homepath string) (Lang, error) {
-	var l = Lang("")
+	var arr = make([]string, 0)
 	if ok, _ := util.FileExists(homepath); !ok {
 		return NO, ErrCodeDirNotExist
 	}
@@ -141,13 +142,13 @@ func GetLangType(homepath string) (Lang, error) {
 	//获取确定的语言
 	for _, check := range checkFuncList {
 		if lang := check(homepath); lang != NO {
-			l = l.Add(lang)
+			arr = append(arr, string(lang))
 		}
 	}
-	if len(string(l)) == 0 {
+	if len(arr) == 0 {
 		return NO, ErrCodeUnableIdentify
 	} else {
-		return l, nil
+		return Lang(strings.Join(arr, ",")), nil
 	}
 }
 
