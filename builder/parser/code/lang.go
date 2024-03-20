@@ -238,9 +238,7 @@ func nodejs(homepath string) Lang {
 }
 func nodeJSStatic(homepath string) Lang {
 	if ok, _ := util.FileExists(path.Join(homepath, "package.json")); ok {
-		if ok, _ := util.FileExists(path.Join(homepath, "nodestatic.json")); ok {
-			return NodeJSStatic
-		}
+		return NodeJSStatic
 	}
 	return NO
 }
