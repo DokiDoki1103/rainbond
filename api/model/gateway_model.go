@@ -24,7 +24,7 @@ import (
 	"strings"
 )
 
-//AddHTTPRuleStruct is used to add http rule, certificate and rule extensions
+// AddHTTPRuleStruct is used to add http rule, certificate and rule extensions
 type AddHTTPRuleStruct struct {
 	HTTPRuleID         string                 `json:"http_rule_id" validate:"http_rule_id|required"`
 	ServiceID          string                 `json:"service_id" validate:"service_id|required"`
@@ -58,7 +58,7 @@ type LimitingPolicy struct {
 	MaxAccessRate    int    `json:"max_access_rate"`
 }
 
-//GatewayCertificate -
+// GatewayCertificate -
 type GatewayCertificate struct {
 	Name        string `json:"name"`
 	Namespace   string `json:"namespace"`
@@ -66,7 +66,7 @@ type GatewayCertificate struct {
 	Certificate string `json:"certificate"`
 }
 
-//GatewayHTTPRouteConcise -
+// GatewayHTTPRouteConcise -
 type GatewayHTTPRouteConcise struct {
 	Name             string   `json:"name"`
 	Hosts            []string `json:"hosts"`
@@ -102,7 +102,7 @@ type OldOuterPortGatewayHTTPRouteStruct struct {
 	Port        int    `json:"port"`
 }
 
-//GatewayHTTPRouteStruct -
+// GatewayHTTPRouteStruct -
 type GatewayHTTPRouteStruct struct {
 	Name             string   `json:"name"`
 	AppID            string   `json:"app_id"`
@@ -116,34 +116,34 @@ type GatewayHTTPRouteStruct struct {
 	Exist            bool     `json:"exist"`
 }
 
-//Rules -
+// Rules -
 type Rules struct {
 	MatchesRules     []*MatchesRule     `json:"matches_rule"`
 	BackendRefsRules []*BackendRefsRule `json:"backend_refs_rule"`
 	FiltersRules     []*FiltersRule     `json:"filters_rule"`
 }
 
-//FiltersRule -
+// FiltersRule -
 type FiltersRule struct {
 	Type                  string                     `json:"type,omitempty"`
 	RequestHeaderModifier *HTTPHeaderFilter          `json:"request_header_modifier,omitempty"`
 	RequestRedirect       *HTTPRequestRedirectFilter `json:"request_redirect,omitempty"`
 }
 
-//HTTPHeaderFilter -
+// HTTPHeaderFilter -
 type HTTPHeaderFilter struct {
 	Set    []*HTTPHeader `json:"set"`
 	Add    []*HTTPHeader `json:"add"`
 	Remove []string      `json:"remove"`
 }
 
-//HTTPHeader -
+// HTTPHeader -
 type HTTPHeader struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
-//HTTPRequestRedirectFilter -
+// HTTPRequestRedirectFilter -
 type HTTPRequestRedirectFilter struct {
 	Scheme     string `json:"scheme"`
 	Hostname   string `json:"hostname"`
@@ -151,7 +151,7 @@ type HTTPRequestRedirectFilter struct {
 	StatusCode int    `json:"status_code"`
 }
 
-//BackendRefsRule -
+// BackendRefsRule -
 type BackendRefsRule struct {
 	Name      string `json:"name"`
 	Weight    int    `json:"weight"`
@@ -160,20 +160,20 @@ type BackendRefsRule struct {
 	Port      int    `json:"port"`
 }
 
-//MatchesRule -
+// MatchesRule -
 type MatchesRule struct {
 	Path    *MatchesRulePath     `json:"path"`
 	Headers []*MatchesRuleHeader `json:"headers"`
 }
 
-//MatchesRuleHeader -
+// MatchesRuleHeader -
 type MatchesRuleHeader struct {
 	Name  string `json:"name"`
 	Type  string `json:"type"`
 	Value string `json:"value"`
 }
 
-//MatchesRulePath -
+// MatchesRulePath -
 type MatchesRulePath struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
@@ -201,7 +201,7 @@ func (h *AddHTTPRuleStruct) DbModel(serviceID string) *dbmodel.HTTPRule {
 	}
 }
 
-//UpdateHTTPRuleStruct is used to update http rule, certificate and rule extensions
+// UpdateHTTPRuleStruct is used to update http rule, certificate and rule extensions
 type UpdateHTTPRuleStruct struct {
 	HTTPRuleID         string                 `json:"http_rule_id" validate:"http_rule_id|required"`
 	ServiceID          string                 `json:"service_id"`
@@ -228,7 +228,7 @@ type UpdateHTTPRuleStruct struct {
 	LimitingPolicyName string                 `json:"limiting_policy_name"`
 }
 
-//DeleteHTTPRuleStruct contains the id of http rule that will be deleted
+// DeleteHTTPRuleStruct contains the id of http rule that will be deleted
 type DeleteHTTPRuleStruct struct {
 	HTTPRuleID string `json:"http_rule_id" validate:"http_rule_id|required"`
 }
@@ -315,6 +315,7 @@ type Body struct {
 	ProxyReadTimeout    int          `json:"proxy_read_timeout,omitempty" validate:"proxy_read_timeout|required"`
 	ProxyBodySize       int          `json:"proxy_body_size,omitempty" validate:"proxy_body_size|required"`
 	SetHeaders          []*SetHeader `json:"set_headers,omitempty" `
+	ResponseHeaders     []*SetHeader `json:"response_headers,omitempty" `
 	Rewrites            []*Rewrite   `json:"rewrite,omitempty"`
 	ProxyBufferSize     int          `json:"proxy_buffer_size,omitempty" validate:"proxy_buffer_size|numeric_between:1,65535"`
 	ProxyBufferNumbers  int          `json:"proxy_buffer_numbers,omitempty" validate:"proxy_buffer_size|numeric_between:1,65535"`
@@ -329,6 +330,7 @@ type HTTPRuleConfig struct {
 	ProxyReadTimeout    int          `json:"proxy_read_timeout,omitempty" validate:"proxy_read_timeout|required"`
 	ProxyBodySize       int          `json:"proxy_body_size,omitempty" validate:"proxy_body_size|required"`
 	SetHeaders          []*SetHeader `json:"set_headers,omitempty" `
+	ResponseHeaders     []*SetHeader `json:"response_headers,omitempty" `
 	Rewrites            []*Rewrite   `json:"rewrite,omitempty"`
 	ProxyBufferSize     int          `json:"proxy_buffer_size,omitempty" validate:"proxy_buffer_size|numeric_between:1,65535"`
 	ProxyBufferNumbers  int          `json:"proxy_buffer_numbers,omitempty" validate:"proxy_buffer_size|numeric_between:1,65535"`
@@ -391,10 +393,29 @@ func (h *HTTPRuleConfig) DbModel() []*dbmodel.GwRuleConfig {
 			Value:  v,
 		})
 	}
+
+	responseHeader := make(map[string]string)
+	for _, item := range h.ResponseHeaders {
+		if strings.TrimSpace(item.Key) == "" {
+			continue
+		}
+		if strings.TrimSpace(item.Value) == "" {
+			item.Value = "empty"
+		}
+		// filter same key
+		responseHeader["resp-header-"+item.Key] = item.Value
+	}
+	for k, v := range responseHeader {
+		configs = append(configs, &dbmodel.GwRuleConfig{
+			RuleID: h.RuleID,
+			Key:    k,
+			Value:  v,
+		})
+	}
 	return configs
 }
 
-//SetHeader set header
+// SetHeader set header
 type SetHeader struct {
 	Key   string `json:"item_key"`
 	Value string `json:"item_value"`
