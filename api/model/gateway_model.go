@@ -79,7 +79,7 @@ type GatewayHTTPRouteConcise struct {
 	RouteYaml        string   `json:"route_yaml"`
 }
 
-//OuterPortGatewayHTTPRouteStruct -
+// OuterPortGatewayHTTPRouteStruct -
 type OuterPortGatewayHTTPRouteStruct struct {
 	Name             string `json:"name"`
 	AppID            string `json:"app_id"`

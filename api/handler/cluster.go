@@ -5,6 +5,7 @@ import (
 	"fmt"
 	rainbondv1alpha1 "github.com/goodrain/rainbond-operator/api/v1alpha1"
 	"github.com/goodrain/rainbond-operator/util/rbdutil"
+	"github.com/goodrain/rainbond/config/configs"
 	"github.com/goodrain/rainbond/worker/appm/conversion"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
@@ -131,7 +132,7 @@ type nodePod struct {
 	EphemeralStorage prometheus.MetricValue
 }
 
-//GetClusterInfo -
+// GetClusterInfo -
 func (c *clusterAction) GetClusterInfo(ctx context.Context) (*model.ClusterResource, error) {
 	timeout, _ := strconv.Atoi(os.Getenv("CLUSTER_INFO_CACHE_TIME"))
 	if timeout == 0 {
@@ -415,7 +416,7 @@ func (c *clusterAction) listPods(ctx context.Context, nodeName string) (pods []c
 	return podList.Items, nil
 }
 
-//MavenSetting maven setting
+// MavenSetting maven setting
 type MavenSetting struct {
 	Name       string `json:"name" validate:"required"`
 	CreateTime string `json:"create_time"`
@@ -424,7 +425,7 @@ type MavenSetting struct {
 	IsDefault  bool   `json:"is_default"`
 }
 
-//MavenSettingList maven setting list
+// MavenSettingList maven setting list
 func (c *clusterAction) MavenSettingList(ctx context.Context) (re []MavenSetting) {
 	cms, err := c.clientset.CoreV1().ConfigMaps(c.namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "configtype=mavensetting",
@@ -448,7 +449,7 @@ func (c *clusterAction) MavenSettingList(ctx context.Context) (re []MavenSetting
 	return
 }
 
-//MavenSettingAdd maven setting add
+// MavenSettingAdd maven setting add
 func (c *clusterAction) MavenSettingAdd(ctx context.Context, ms *MavenSetting) *util.APIHandleError {
 	config := &corev1.ConfigMap{}
 	config.Name = ms.Name
@@ -476,7 +477,7 @@ func (c *clusterAction) MavenSettingAdd(ctx context.Context, ms *MavenSetting) *
 	return nil
 }
 
-//MavenSettingUpdate maven setting file update
+// MavenSettingUpdate maven setting file update
 func (c *clusterAction) MavenSettingUpdate(ctx context.Context, ms *MavenSetting) *util.APIHandleError {
 	sm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(ctx, ms.Name, metav1.GetOptions{})
 	if err != nil {
@@ -503,7 +504,7 @@ func (c *clusterAction) MavenSettingUpdate(ctx context.Context, ms *MavenSetting
 	return nil
 }
 
-//MavenSettingDelete maven setting file delete
+// MavenSettingDelete maven setting file delete
 func (c *clusterAction) MavenSettingDelete(ctx context.Context, name string) *util.APIHandleError {
 	err := c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(ctx, name, metav1.DeleteOptions{})
 	if err != nil {
@@ -516,7 +517,7 @@ func (c *clusterAction) MavenSettingDelete(ctx context.Context, name string) *ut
 	return nil
 }
 
-//MavenSettingDetail maven setting file delete
+// MavenSettingDetail maven setting file delete
 func (c *clusterAction) MavenSettingDetail(ctx context.Context, name string) (*MavenSetting, *util.APIHandleError) {
 	sm, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
@@ -552,7 +553,7 @@ func (c *clusterAction) GetExceptionNodeInfo(ctx context.Context) ([]*model.Exce
 	return exceptionNodes, nil
 }
 
-//BatchGetGateway batch get gateway
+// BatchGetGateway batch get gateway
 func (c *clusterAction) BatchGetGateway(ctx context.Context) ([]*model.GatewayResource, *util.APIHandleError) {
 	gateways, err := c.gatewayClient.Gateways(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -656,7 +657,7 @@ func (c *clusterAction) GetNamespace(ctx context.Context, content string) ([]str
 	return *namespaces, nil
 }
 
-//MergeMap map去重合并
+// MergeMap map去重合并
 func MergeMap(map1 map[string][]string, map2 map[string][]string) map[string][]string {
 	for k, v := range map1 {
 		if _, ok := map2[k]; ok {
@@ -1080,6 +1081,8 @@ func (c *clusterAction) GetClusterRegionStatus() (map[string]interface{}, error)
 			regionInfo["tcpDomain"] = cluster.GatewayIngressIP()
 			regionInfo["desc"] = "Helm"
 			regionInfo["regionAlias"] = "对接集群"
+			regionInfo["region-sn-name"] = configs.Default().APIConfig.RegionName
+			regionInfo["region-sn"] = configs.Default().APIConfig.RegionSN
 			regionInfo["provider"] = "helm"
 			regionInfo["providerClusterId"] = ""
 			regionInfo["token"] = os.Getenv("HELM_TOKEN")
