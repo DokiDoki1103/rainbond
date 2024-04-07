@@ -322,7 +322,7 @@ func (g Struct) CreateTCPRoute(w http.ResponseWriter, r *http.Request) {
 		httputil.ReturnSuccess(r, w, e.Spec.Ports[0].NodePort)
 		return
 	}
-	get, err := k.Services(tenant.Namespace).Get(r.Context(), serviceName, v1.GetOptions{})
+	get, err := k.Services(tenant.Namespace).Get(r.Context(), serviceName+"-tcp", v1.GetOptions{})
 	if err != nil {
 		logrus.Errorf("get route error %s", err.Error())
 		httputil.ReturnBcodeError(r, w, bcode.ErrRouteUpdate)
