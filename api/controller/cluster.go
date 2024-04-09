@@ -429,7 +429,6 @@ func (t *ClusterController) UpdateAbility(w http.ResponseWriter, r *http.Request
 	httputil.ReturnSuccess(r, w, nil)
 }
 
-
 // GetLangVersion Get the unconnected namespaces under the current cluster
 func (c *ClusterController) GetLangVersion(w http.ResponseWriter, r *http.Request) {
 	language := r.URL.Query().Get("language")
@@ -448,7 +447,7 @@ func (c *ClusterController) UpdateLangVersion(w http.ResponseWriter, r *http.Req
 		httputil.ReturnError(r, w, 400, "failed to parse parameters")
 		return
 	}
-	err := db.GetManager().LongVersionDao().DefaultLangVersion(lang.Lang, lang.Version)
+	err := db.GetManager().LongVersionDao().DefaultLangVersion(lang.Lang, lang.Version, lang.Show)
 	if err != nil {
 		httputil.ReturnError(r, w, 400, fmt.Sprintf("update lang version failure: %v", err))
 		return
@@ -469,7 +468,7 @@ func (c *ClusterController) CreateLangVersion(w http.ResponseWriter, r *http.Req
 		return
 	}
 	if err == gorm.ErrRecordNotFound {
-		err := db.GetManager().LongVersionDao().CreateLangVersion(lang.Lang, lang.Version, lang.EventID, lang.FileName)
+		err := db.GetManager().LongVersionDao().CreateLangVersion(lang.Lang, lang.Version, lang.EventID, lang.FileName, lang.Show)
 		if err != nil {
 			httputil.ReturnError(r, w, 400, fmt.Sprintf("create lang version failure: %v", err))
 			return

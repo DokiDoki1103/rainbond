@@ -152,6 +152,7 @@ type EnterpriseLanguageVersion struct {
 	EventID     string `gorm:"column:event_id" json:"event_id"`
 	FileName    string `gorm:"column:file_name" json:"file_name"`
 	System      bool   `gorm:"column:system" json:"system"`
+	Show        bool   `gorm:"column:show" json:"show"`
 }
 
 // TableName return tableName "k8s_resources"

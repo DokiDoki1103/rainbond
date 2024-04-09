@@ -48,7 +48,7 @@ func (t *LongVersionDaoImpl) GetVersionByLanguageAndVersion(language, version st
 }
 
 // DefaultLangVersion -
-func (t *LongVersionDaoImpl) DefaultLangVersion(lang string, version string) error {
+func (t *LongVersionDaoImpl) DefaultLangVersion(lang string, version string, show bool) error {
 	defaultVersion := new(model.EnterpriseLanguageVersion)
 	if err := t.DB.Debug().Where("lang = ? AND first_choice = ?", lang, true).Find(defaultVersion).Error; err != nil {
 		return err
@@ -67,6 +67,7 @@ func (t *LongVersionDaoImpl) DefaultLangVersion(lang string, version string) err
 	}
 	if ver != nil {
 		ver.FirstChoice = true
+		ver.Show = show
 		err := t.UpdateModel(ver)
 		if err != nil {
 			return err
@@ -76,12 +77,13 @@ func (t *LongVersionDaoImpl) DefaultLangVersion(lang string, version string) err
 }
 
 // CreateLangVersion -
-func (t *LongVersionDaoImpl) CreateLangVersion(lang, version, eventID, fileName string) error {
+func (t *LongVersionDaoImpl) CreateLangVersion(lang, version, eventID, fileName string, show bool) error {
 	ver := new(model.EnterpriseLanguageVersion)
 	err := t.DB.Where("lang = ? and version = ?", lang, version).Find(ver).Error
 	if err == gorm.ErrRecordNotFound {
 		if err := t.DB.Create(&model.EnterpriseLanguageVersion{
 			Lang:        lang,
+			Show:        show,
 			Version:     version,
 			FirstChoice: false,
 			System:      false,

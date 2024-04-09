@@ -2352,4 +2352,5 @@ type UpdateLangVersion struct {
 	Version  string `json:"version"`
 	EventID  string `json:"event_id"`
 	FileName string `json:"file_name"`
+	Show     bool   `json:"show"`
 }
