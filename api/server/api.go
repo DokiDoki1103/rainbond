@@ -171,6 +171,7 @@ func (m *Manager) Run() {
 		websocketRouter.Mount("/logs", websocket.LogRoutes())
 		websocketRouter.Mount("/app", websocket.AppRoutes())
 		websocketRouter.Mount("/package_build", websocket.PackageBuildRoutes())
+		websocketRouter.Mount("/helm_install", websocket.HelmInstallRegionStatus())
 		websocketRouter.Mount("/v2/file-operate", websocket.FileOperateRoutes())
 		websocketRouter.Mount("/lg_pack_operate", websocket.LongVersionRoutes())
 		if m.conf.WebsocketSSL {

@@ -59,6 +59,7 @@ type ClusterInterface interface {
 	UpdateLangVersion(w http.ResponseWriter, r *http.Request)
 	CreateLangVersion(w http.ResponseWriter, r *http.Request)
 	DeleteLangVersion(w http.ResponseWriter, r *http.Request)
+	GetRegionStatus(w http.ResponseWriter, r *http.Request)
 }
 
 // NodesInterface -

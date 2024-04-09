@@ -20,9 +20,9 @@ package code
 
 import (
 	"fmt"
-	"path"
-
 	"github.com/goodrain/rainbond/util"
+	"path"
+	"strings"
 )
 
 func init() {
@@ -62,6 +62,11 @@ type Lang string
 // String return lang string
 func (l Lang) String() string {
 	return string(l)
+}
+
+// String return lang string
+func (l Lang) Add(otherLang Lang) Lang {
+	return Lang(string(l) + "," + string(otherLang))
 }
 
 // NO 空语言类型
@@ -126,6 +131,7 @@ var OSS Lang = "OSS"
 
 // GetLangType check code lang
 func GetLangType(homepath string) (Lang, error) {
+	var arr = make([]string, 0)
 	if ok, _ := util.FileExists(homepath); !ok {
 		return NO, ErrCodeDirNotExist
 	}
@@ -136,12 +142,14 @@ func GetLangType(homepath string) (Lang, error) {
 	//获取确定的语言
 	for _, check := range checkFuncList {
 		if lang := check(homepath); lang != NO {
-			return lang, nil
+			arr = append(arr, string(lang))
 		}
 	}
-	//获取可能的语言
-	//无法识别
-	return NO, ErrCodeUnableIdentify
+	if len(arr) == 0 {
+		return NO, ErrCodeUnableIdentify
+	} else {
+		return Lang(strings.Join(arr, ",")), nil
+	}
 }
 
 type langTypeFunc func(homepath string) Lang
@@ -230,9 +238,7 @@ func nodejs(homepath string) Lang {
 }
 func nodeJSStatic(homepath string) Lang {
 	if ok, _ := util.FileExists(path.Join(homepath, "package.json")); ok {
-		if ok, _ := util.FileExists(path.Join(homepath, "nodestatic.json")); ok {
-			return NodeJSStatic
-		}
+		return NodeJSStatic
 	}
 	return NO
 }

@@ -65,6 +65,8 @@ type Config struct {
 	GrctlImage             string
 	RbdHub                 string
 	RbdWorker              string
+	RegionName             string
+	RegionSN               string
 }
 
 // APIServer  apiserver server
@@ -81,6 +83,8 @@ func NewAPIServer() *APIServer {
 
 // AddFlags config
 func (a *APIServer) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&a.RegionName, "region-name", "", "配置的集群地区名称")
+	fs.StringVar(&a.RegionSN, "region-sn", "", "配置的集群地区编号")
 	fs.StringVar(&a.LogLevel, "log-level", "info", "the api log level")
 	fs.StringVar(&a.DBType, "db-type", "mysql", "db type mysql or etcd")
 	fs.StringVar(&a.DBConnectionInfo, "mysql", "admin:admin@tcp(127.0.0.1:3306)/region", "mysql db connection info")
