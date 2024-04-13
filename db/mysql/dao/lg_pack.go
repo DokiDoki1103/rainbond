@@ -32,7 +32,7 @@ func (t *LongVersionDaoImpl) UpdateModel(mo model.Interface) error {
 // ListVersionByLanguage list by language
 func (t *LongVersionDaoImpl) ListVersionByLanguage(language string) ([]*model.EnterpriseLanguageVersion, error) {
 	var versions []*model.EnterpriseLanguageVersion
-	if err := t.DB.Where("lang = ? and show = ?", language, true).Find(&versions).Error; err != nil {
+	if err := t.DB.Where("lang = ? and is_show = ?", language, true).Find(&versions).Error; err != nil {
 		return nil, err
 	}
 	return versions, nil
