@@ -447,7 +447,7 @@ func (c *ClusterController) UpdateLangVersion(w http.ResponseWriter, r *http.Req
 		httputil.ReturnError(r, w, 400, "failed to parse parameters")
 		return
 	}
-	err := db.GetManager().LongVersionDao().DefaultLangVersion(lang.Lang, lang.Version, lang.Show)
+	err := db.GetManager().LongVersionDao().DefaultLangVersion(lang.Lang, lang.Version, lang.Show, lang.FirstChoice)
 	if err != nil {
 		httputil.ReturnError(r, w, 400, fmt.Sprintf("update lang version failure: %v", err))
 		return
