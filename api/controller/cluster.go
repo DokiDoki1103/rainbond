@@ -432,7 +432,8 @@ func (t *ClusterController) UpdateAbility(w http.ResponseWriter, r *http.Request
 // GetLangVersion Get the unconnected namespaces under the current cluster
 func (c *ClusterController) GetLangVersion(w http.ResponseWriter, r *http.Request) {
 	language := r.URL.Query().Get("language")
-	versions, err := db.GetManager().LongVersionDao().ListVersionByLanguage(language)
+	show := r.URL.Query().Get("show")
+	versions, err := db.GetManager().LongVersionDao().ListVersionByLanguage(language, show)
 	if err != nil {
 		httputil.ReturnBcodeError(r, w, fmt.Errorf("update lang version failure: %v", err))
 		return
