@@ -12,11 +12,11 @@ import (
 
 func UpdateAuthorizationPolicies(namespace, serviceID, operation string, port int, config *rest.Config, depSAName string) error {
 	ic, err := versioned.NewForConfig(config)
-	if err != nil && !strings.Contains(err.Error(), "not found") {
+	if err != nil && !strings.Contains(err.Error(), "not find") {
 		return err
 	}
 	aps, err := ic.SecurityV1().AuthorizationPolicies(namespace).List(context.Background(), metav1.ListOptions{LabelSelector: "service_id=" + serviceID})
-	if err != nil && !strings.Contains(err.Error(), "not found") {
+	if err != nil && !strings.Contains(err.Error(), "not find") {
 		return err
 	}
 	if aps == nil || len(aps.Items) == 0 {
@@ -168,7 +168,7 @@ func UpdateAuthorizationPolicies(namespace, serviceID, operation string, port in
 	ap.Spec.Rules = rules
 	_, err = ic.SecurityV1().AuthorizationPolicies(namespace).Update(context.Background(), ap, metav1.UpdateOptions{})
 
-	if err != nil && !strings.Contains(err.Error(), "not found") {
+	if err != nil && !strings.Contains(err.Error(), "not find") {
 		return err
 	}
 	return nil
