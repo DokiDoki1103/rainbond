@@ -963,11 +963,11 @@ func (a *ApplicationAction) ListAppStatuses(ctx context.Context, appIDs []string
 // ListGovernanceMode -
 func (a *ApplicationAction) ListGovernanceMode() ([]model.GovernanceMode, error) {
 	governanceModes := []model.GovernanceMode{
-		{
-			Name:        dbmodel.GovernanceModeBuildInServiceMesh,
-			IsDefault:   true,
-			Description: dbmodel.GovernanceModeBuildInServiceMeshDesc,
-		},
+		//{
+		//	Name:        dbmodel.GovernanceModeBuildInServiceMesh,
+		//	IsDefault:   true,
+		//	Description: dbmodel.GovernanceModeBuildInServiceMeshDesc,
+		//},
 		{
 			Name:        dbmodel.GovernanceModeKubernetesNativeService,
 			IsDefault:   true,
