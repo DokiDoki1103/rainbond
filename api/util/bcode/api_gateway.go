@@ -13,6 +13,9 @@ const (
 	// RouteCreateError 表示路由创建错误码
 	RouteCreateError
 
+	// RouteCreateErrorPortExists 表示路由创建错误码
+	RouteCreateErrorPortExists
+
 	// RouteDeleteError 表示路由删除错误码
 	RouteDeleteError
 
@@ -60,7 +63,7 @@ var (
 	// ErrRouteUpdate 表示路由更新错误
 	ErrRouteUpdate = newByMessage(http.StatusBadRequest, RouteUpdateError, "路由更新错误,请检查参数")
 
-	ErrPortExists = newByMessage(http.StatusBadRequest, RouteCreateError, "端口已经被占用,请更换端口")
+	ErrPortExists = newByMessage(http.StatusBadRequest, RouteCreateErrorPortExists, "端口已经被占用,请更换端口")
 
 	// ErrRouteCreate 表示路由创建错误
 	ErrRouteCreate = newByMessage(http.StatusBadRequest, RouteCreateError, "路由创建错误,请检查参数")
