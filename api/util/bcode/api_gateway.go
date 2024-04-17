@@ -5,7 +5,7 @@ import "net/http"
 // 定义错误码
 const (
 	// RouteNotFound 表示路由未找到错误码
-	RouteNotFound = iota + 50001
+	RouteNotFound = iota + 5000001
 
 	// RouteUpdateError 表示路由更新错误码
 	RouteUpdateError
