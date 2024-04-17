@@ -639,23 +639,8 @@ func (t *TenantAction) GetProtocols() ([]*dbmodel.RegionProcotols, *util.APIHand
 			IsSupport:     true,
 		},
 		{
-			ProtocolGroup: "http",
-			ProtocolChild: "grpc",
-			APIVersion:    "v2",
-			IsSupport:     true,
-		}, {
 			ProtocolGroup: "stream",
 			ProtocolChild: "tcp",
-			APIVersion:    "v2",
-			IsSupport:     true,
-		}, {
-			ProtocolGroup: "stream",
-			ProtocolChild: "udp",
-			APIVersion:    "v2",
-			IsSupport:     true,
-		}, {
-			ProtocolGroup: "stream",
-			ProtocolChild: "mysql",
 			APIVersion:    "v2",
 			IsSupport:     true,
 		},
