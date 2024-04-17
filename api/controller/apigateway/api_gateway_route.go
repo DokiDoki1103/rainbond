@@ -356,14 +356,14 @@ func (g Struct) CreateTCPRoute(w http.ResponseWriter, r *http.Request) {
 	get, err := k.Services(tenant.Namespace).Get(r.Context(), serviceName+"-tcp", v1.GetOptions{})
 	if err != nil {
 		logrus.Errorf("get route error %s", err.Error())
-		httputil.ReturnBcodeError(r, w, bcode.ErrRouteUpdate)
+		httputil.ReturnBcodeError(r, w, bcode.ErrPortExists)
 		return
 	}
 	get.Spec = spec
 	update, err := k.Services(tenant.Namespace).Update(r.Context(), get, v1.UpdateOptions{})
 	if err != nil {
 		logrus.Errorf("update route error %s", err.Error())
-		httputil.ReturnBcodeError(r, w, bcode.ErrRouteUpdate)
+		httputil.ReturnBcodeError(r, w, bcode.ErrPortExists)
 		return
 	}
 	httputil.ReturnSuccess(r, w, update.Spec.Ports[0].NodePort)
