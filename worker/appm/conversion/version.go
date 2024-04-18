@@ -31,6 +31,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/goodrain/rainbond/builder/sources"
 
@@ -52,6 +53,8 @@ import (
 )
 
 func updateAPISixRoute(as *v1.AppService) error {
+
+	time.Sleep(5 * time.Second)
 	// 找到这个端口对应的真实的k8s svc的 namne
 	ports, err := db.GetManager().TenantServicesPortDao().GetOuterPorts(as.ServiceID)
 	if err != nil {
@@ -99,10 +102,7 @@ func TenantServiceVersion(as *v1.AppService, dbmanager db.Manager) error {
 		return fmt.Errorf("get service deploy version %s failure %s", as.DeployVersion, err.Error())
 	}
 
-	updateAPISixRouteErr := updateAPISixRoute(as)
-	if updateAPISixRouteErr != nil {
-		logrus.Errorf("update apisix route error: %v", updateAPISixRouteErr)
-	}
+	go updateAPISixRoute(as)
 
 	envVarSecrets := as.GetEnvVarSecrets(true)
 	logrus.Debugf("[getMainContainer] %d secrets as envs were found.", len(envVarSecrets))
