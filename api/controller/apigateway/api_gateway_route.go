@@ -23,7 +23,7 @@ func (g Struct) OpenOrCloseDomains(w http.ResponseWriter, r *http.Request) {
 	c := k8s.Default().ApiSixClient.ApisixV2()
 	tenant := r.Context().Value(ctxutil.ContextKey("tenant")).(*dbmodel.Tenants)
 	list, _ := c.ApisixRoutes(tenant.Namespace).List(r.Context(), v1.ListOptions{
-		LabelSelector: "service_alias=" + r.URL.Query().Get("service_alias"),
+		LabelSelector: "service_alias=" + r.URL.Query().Get("service_alias") + ",port=" + r.URL.Query().Get("port"),
 	})
 	for _, item := range list.Items {
 		var plugins = item.Spec.HTTP[0].Plugins
@@ -47,7 +47,6 @@ func (g Struct) OpenOrCloseDomains(w http.ResponseWriter, r *http.Request) {
 		item.Spec.HTTP[0].Plugins = newPlugins
 		item.Status = v2.ApisixStatus{}
 		c.ApisixRoutes(tenant.Namespace).Update(r.Context(), &item, v1.UpdateOptions{})
-		c.ApisixRoutes(tenant.Namespace).UpdateStatus(r.Context(), &item, v1.UpdateOptions{})
 	}
 	httputil.ReturnSuccess(r, w, nil)
 }
