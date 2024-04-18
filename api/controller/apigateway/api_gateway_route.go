@@ -58,7 +58,7 @@ func (g Struct) GetBindDomains(w http.ResponseWriter, r *http.Request) {
 	tenant := r.Context().Value(ctxutil.ContextKey("tenant")).(*dbmodel.Tenants)
 
 	list, err := c.ApisixRoutes(tenant.Namespace).List(r.Context(), v1.ListOptions{
-		LabelSelector: "service_alias=" + r.URL.Query().Get("service_alias"),
+		LabelSelector: "service_alias=" + r.URL.Query().Get("service_alias") + ",port=" + r.URL.Query().Get("port"),
 	})
 	if err != nil {
 		logrus.Errorf("get route error %s", err.Error())
@@ -143,6 +143,7 @@ func (g Struct) CreateHTTPAPIRoute(w http.ResponseWriter, r *http.Request) {
 	// 如果没有绑定appId，那么不要加这个lable
 	labels := make(map[string]string)
 	labels["creator"] = "Rainbond"
+	labels["port"] = r.URL.Query().Get("port")
 	if r.URL.Query().Get("appID") != "" {
 		labels["app_id"] = r.URL.Query().Get("appID")
 	}
