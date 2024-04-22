@@ -25,6 +25,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/goodrain/rainbond/api/util/bcode"
@@ -1310,9 +1311,9 @@ func (t *TenantServiceMountRelationDaoImpl) DELTenantServiceMountRelationByServi
 
 // GetTenantServiceMountRelationsByService 获取应用的所有挂载依赖
 func (t *TenantServiceMountRelationDaoImpl) GetTenantServiceMountRelationsByService(serviceID string) ([]*model.TenantServiceMountRelation, error) {
-	var relations []*model.TenantServiceMountRelation
+	var relations = make([]*model.TenantServiceMountRelation, 0)
 	if err := t.DB.Where("service_id=? ", serviceID).Find(&relations).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if strings.Contains(err.Error(), "record not found") {
 			return relations, nil
 		}
 		return nil, err
@@ -1405,9 +1406,9 @@ func (t *TenantServiceVolumeDaoImpl) UpdateModel(mo model.Interface) error {
 
 // GetTenantServiceVolumesByServiceID 获取应用挂载
 func (t *TenantServiceVolumeDaoImpl) GetTenantServiceVolumesByServiceID(serviceID string) ([]*model.TenantServiceVolume, error) {
-	var volumes []*model.TenantServiceVolume
+	var volumes = make([]*model.TenantServiceVolume, 0)
 	if err := t.DB.Where("service_id=? ", serviceID).Find(&volumes).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if strings.Contains(err.Error(), "record not found") {
 			return volumes, nil
 		}
 		return nil, err
