@@ -114,7 +114,7 @@ func TenantServiceVersion(as *v1.AppService, dbmanager db.Manager) error {
 
 	dv, err := createVolumes(as, version, envs, envVarSecrets, dbmanager)
 	if err != nil {
-		return fmt.Errorf("create volume in pod template error :%s", err.Error())
+		logrus.Errorf("create volume in pod template error :%s", err.Error())
 	}
 	//need service mesh sidecar, volume kubeconfig
 	if as.NeedProxy {
