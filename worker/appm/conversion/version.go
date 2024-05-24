@@ -473,6 +473,7 @@ func createEnv(as *v1.AppService, dbmanager db.Manager, envVarSecrets []*corev1.
 		if as.GovernanceMode == model.GovernanceModeBuildInServiceMesh {
 			as.NeedProxy = true
 		}
+		logrus.Infof("GovernanceModeSpringCloudServiceMesh %s ", as.GovernanceMode)
 		// enable spring cloud service mesh
 		if as.GovernanceMode == model.GovernanceModeSpringCloudServiceMesh {
 			envs = append(envs, corev1.EnvVar{Name: "BUILD_ES_ENABLE_SPRING_CLOUD", Value: "true"})  // for build
