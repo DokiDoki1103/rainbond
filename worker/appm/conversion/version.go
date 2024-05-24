@@ -430,6 +430,15 @@ func createEnv(as *v1.AppService, dbmanager db.Manager, envVarSecrets []*corev1.
 	bootSeqDepServiceIDs := as.ExtensionSet["boot_seq_dep_service_ids"]
 	logrus.Infof("boot sequence dep service ids: %s", bootSeqDepServiceIDs)
 
+	logrus.Infof("GovernanceModeSpringCloudServiceMesh %s ", as.GovernanceMode)
+	// enable spring cloud service mesh
+	if as.GovernanceMode == model.GovernanceModeSpringCloudServiceMesh {
+		envs = append(envs, corev1.EnvVar{Name: "BUILD_ES_ENABLE_SPRING_CLOUD", Value: "true"})  // for build
+		envs = append(envs, corev1.EnvVar{Name: "ES_ENABLE_SPRING_CLOUD", Value: "true"})        // for runtime
+		envs = append(envs, corev1.EnvVar{Name: "RBD_APP_NAME", Value: as.K8sApp})               // app english name ,use group
+		envs = append(envs, corev1.EnvVar{Name: "RBD_SERVICE_NAME", Value: as.K8sComponentName}) // service english name
+	}
+
 	//set relation app outer env
 	var relationIDs []string
 	relations, err := dbmanager.TenantServiceRelationDao().GetTenantServiceRelations(as.ServiceID)
@@ -472,14 +481,6 @@ func createEnv(as *v1.AppService, dbmanager db.Manager, envVarSecrets []*corev1.
 
 		if as.GovernanceMode == model.GovernanceModeBuildInServiceMesh {
 			as.NeedProxy = true
-		}
-		logrus.Infof("GovernanceModeSpringCloudServiceMesh %s ", as.GovernanceMode)
-		// enable spring cloud service mesh
-		if as.GovernanceMode == model.GovernanceModeSpringCloudServiceMesh {
-			envs = append(envs, corev1.EnvVar{Name: "BUILD_ES_ENABLE_SPRING_CLOUD", Value: "true"})  // for build
-			envs = append(envs, corev1.EnvVar{Name: "ES_ENABLE_SPRING_CLOUD", Value: "true"})        // for runtime
-			envs = append(envs, corev1.EnvVar{Name: "RBD_APP_NAME", Value: as.K8sApp})               // app english name ,use group
-			envs = append(envs, corev1.EnvVar{Name: "RBD_SERVICE_NAME", Value: as.K8sComponentName}) // service english name
 		}
 	}
 
